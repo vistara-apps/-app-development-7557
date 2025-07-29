@@ -12,10 +12,10 @@ export function usePaymentContext() {
     if (isLoading) throw new Error("wallet is loading");
     
     const baseClient = axios.create({
-        baseURL: "https://payments.vistara.dev",
-        headers: {
-            "Content-Type": "application/json",
-        },
+      baseURL: "https://payments.vistara.dev",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
     
     const apiClient = withPaymentInterceptor(baseClient, walletClient);

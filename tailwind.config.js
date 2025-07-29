@@ -7,10 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#8B5CF6',
-        secondary: '#EC4899',
-        dark: '#1F2937',
-        darker: '#111827'
+        primary: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          900: '#7f1d1d',
+        },
+        dark: {
+          800: '#1f2937',
+          900: '#111827',
+        }
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s infinite',
       }
     },
   },

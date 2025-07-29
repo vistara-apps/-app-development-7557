@@ -1,30 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { TokenProvider } from './context/TokenContext';
 import Header from './components/Header';
-import HomePage from './pages/HomePage';
-import ContentLibrary from './pages/ContentLibrary';
+import Home from './pages/Home';
+import Browse from './pages/Browse';
+import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import Subscription from './pages/Subscription';
+import MobileNav from './components/MobileNav';
+import AuthModal from './components/AuthModal';
+import SubscriptionModal from './components/SubscriptionModal';
+import { AuthProvider } from './context/AuthContext';
+import { ContentProvider } from './context/ContentContext';
+import { TokenProvider } from './context/TokenContext';
 
 function App() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <AuthProvider>
       <TokenProvider>
-        <Router>
-          <div className="min-h-screen bg-darker">
-            <Header />
-            <main className="container mx-auto px-4 py-8">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/library" element={<ContentLibrary />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/subscription" element={<Subscription />} />
-              </Routes>
-            </main>
-          </div>
-        </Router>
+        <ContentProvider>
+          <Router>
+            <div className="min-h-screen bg-dark-900">
+              <Header />
+              
+              <main className={isMobile ? "pb-20" : ""}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/browse" element={<Browse />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/profile" element={<Profile />} />
+                </Routes>
+              </main>
+
+              {isMobile && <MobileNav />}
+              
+              <AuthModal />
+              <SubscriptionModal />
+            </div>
+          </Router>
+        </ContentProvider>
       </TokenProvider>
     </AuthProvider>
   );
