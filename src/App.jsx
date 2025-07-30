@@ -5,12 +5,14 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 import MobileNav from './components/MobileNav';
 import AuthModal from './components/AuthModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { AuthProvider } from './context/AuthContext';
 import { ContentProvider } from './context/ContentContext';
 import { TokenProvider } from './context/TokenContext';
+import { useFeatureFlags } from './hooks/useFeatureFlags';
 
 function App() {
   const [isMobile, setIsMobile] = useState(false);
@@ -40,6 +42,7 @@ function App() {
                   <Route path="/browse" element={<Browse />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/admin-phyght-2024" element={<AdminDashboard />} />
                 </Routes>
               </main>
 

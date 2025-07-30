@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import OpenAI from 'openai';
+import { useAuth } from './AuthContext';
+import { mockCombatVideos, featuredContent, trendingContent, freeContent, premiumContent } from '../data/mockContent';
+import { COMBAT_CATEGORIES } from '../config/features';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 const ContentContext = createContext();
 
@@ -12,161 +15,155 @@ export const useContent = () => {
 };
 
 export const ContentProvider = ({ children }) => {
-  const [content, setContent] = useState([]);
+  const { user } = useAuth();
+  const { isFeatureEnabled } = useFeatureFlags();
   const [featuredContent, setFeaturedContent] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState([]);
-
-  const openai = new OpenAI({
-    apiKey: "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",
-    baseURL: "https://openrouter.ai/api/v1",
-    dangerouslyAllowBrowser: true,
-  });
-
-  // Mock content data
-  const mockContent = [
-    {
-      id: '1',
-      title: 'Exclusive Premium Series Episode 1',
-      description: 'The beginning of an epic premium series available only to subscribers.',
-      type: 'video',
-      duration: '24:15',
-      previewThumbnail: 'https://images.unsplash.com/photo-1489599510909-e8ed7c9e0f57?w=400&h=225&fit=crop',
-      contentFile: 'premium_series_ep1.mp4',
-      isPremium: true,
-      category: 'series',
-      views: 15420,
-      rating: 4.8
-    },
-    {
-      id: '2',
-      title: 'Action Thriller: Midnight Chase',
-      description: 'High-octane action thriller with stunning cinematography.',
-      type: 'video',
-      duration: '18:32',
-      previewThumbnail: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?w=400&h=225&fit=crop',
-      contentFile: 'midnight_chase.mp4',
-      isPremium: false,
-      category: 'action',
-      views: 8340,
-      rating: 4.5
-    },
-    {
-      id: '3',
-      title: 'Premium Adult Collection Vol. 2',
-      description: 'Curated premium adult entertainment collection.',
-      type: 'video',
-      duration: '32:48',
-      previewThumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=225&fit=crop',
-      contentFile: 'premium_collection_v2.mp4',
-      isPremium: true,
-      category: 'adult',
-      views: 22150,
-      rating: 4.9
-    },
-    {
-      id: '4',
-      title: 'Sci-Fi Adventure: Beyond Stars',
-      description: 'Journey into space with this captivating sci-fi adventure.',
-      type: 'video',
-      duration: '21:07',
-      previewThumbnail: 'https://images.unsplash.com/photo-1446776476813-4f9980a9938a?w=400&h=225&fit=crop',
-      contentFile: 'beyond_stars.mp4',
-      isPremium: false,
-      category: 'sci-fi',
-      views: 12890,
-      rating: 4.6
-    },
-    {
-      id: '5',
-      title: 'VIP Exclusive: Behind the Scenes',
-      description: 'Exclusive behind-the-scenes content for premium members.',
-      type: 'video',
-      duration: '15:44',
-      previewThumbnail: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400&h=225&fit=crop',
-      contentFile: 'vip_behind_scenes.mp4',
-      isPremium: true,
-      category: 'exclusive',
-      views: 5670,
-      rating: 4.7
-    },
-    {
-      id: '6',
-      title: 'Comedy Special: Laugh Out Loud',
-      description: 'Stand-up comedy special that will keep you entertained.',
-      type: 'video',
-      duration: '28:12',
-      previewThumbnail: 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=400&h=225&fit=crop',
-      contentFile: 'comedy_special.mp4',
-      isPremium: false,
-      category: 'comedy',
-      views: 19450,
-      rating: 4.3
-    }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // Simulate API call
-    setTimeout(() => {
-      setContent(mockContent);
-      setFeaturedContent(mockContent.slice(0, 3));
-      generateRecommendations(mockContent);
+    const loadContent = async () => {
+      setLoading(true);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Filter content based on stealth mode
+      let availableContent = mockCombatVideos;
+      if (isFeatureEnabled('STEALTH_MODE')) {
+        // In stealth mode, show all content as free
+        availableContent = mockCombatVideos.map(video => ({
+          ...video,
+          isPremium: false
+        }));
+      }
+      
+      setFeaturedContent(availableContent.slice(0, 6));
+      
+      if (user) {
+        // Generate personalized recommendations based on user preferences
+        const userRecommendations = availableContent.filter(content => 
+          user.subscriptionStatus === 'premium' || !content.isPremium
+        ).slice(6);
+        setRecommendations(userRecommendations);
+      }
+      
       setLoading(false);
-    }, 1500);
-  }, []);
+    };
 
-  const generateRecommendations = async (contentList) => {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "google/gemini-2.0-flash-001",
-        messages: [
-          {
-            role: "system",
-            content: "You are a content recommendation engine. Based on user preferences, suggest 3 content IDs that would be most relevant."
-          },
-          {
-            role: "user",
-            content: `Given these content options: ${JSON.stringify(contentList.map(c => ({ id: c.id, title: c.title, category: c.category, rating: c.rating })))} and user preferences: [action, thriller, sci-fi], recommend 3 content IDs in JSON format: {"recommendations": ["id1", "id2", "id3"]}`
-          }
-        ],
-        max_tokens: 150
-      });
+    loadContent();
+  }, [user, isFeatureEnabled]);
 
-      const result = JSON.parse(response.choices[0].message.content);
-      const recommendedContent = contentList.filter(c => result.recommendations.includes(c.id));
-      setRecommendations(recommendedContent);
-    } catch (error) {
-      console.error('Failed to generate recommendations:', error);
-      // Fallback to first 3 items
-      setRecommendations(contentList.slice(0, 3));
+  const searchContent = (query, filters = {}) => {
+    let content = mockCombatVideos;
+    
+    // Apply stealth mode filtering
+    if (isFeatureEnabled('STEALTH_MODE')) {
+      content = content.map(video => ({ ...video, isPremium: false }));
     }
+    
+    return content.filter(video => {
+      const matchesQuery = !query || 
+        video.title.toLowerCase().includes(query.toLowerCase()) ||
+        video.description.toLowerCase().includes(query.toLowerCase()) ||
+        video.fighters?.some(fighter => fighter.toLowerCase().includes(query.toLowerCase())) ||
+        video.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase()));
+      
+      const matchesCategory = !filters.category || filters.category === 'all' || video.category === filters.category;
+      const matchesType = !filters.type || video.type === filters.type;
+      const matchesPremium = filters.premium === undefined || video.isPremium === filters.premium;
+      const matchesOrganization = !filters.organization || video.organization === filters.organization;
+      
+      return matchesQuery && matchesCategory && matchesType && matchesPremium && matchesOrganization;
+    });
   };
 
   const getContentById = (id) => {
-    return content.find(c => c.id === id);
+    let video = mockCombatVideos.find(content => content.id === id);
+    
+    // Apply stealth mode filtering
+    if (video && isFeatureEnabled('STEALTH_MODE')) {
+      video = { ...video, isPremium: false };
+    }
+    
+    return video;
   };
 
   const getContentByCategory = (category) => {
-    return content.filter(c => c.category === category);
+    let content = mockCombatVideos.filter(video => 
+      category === 'all' || video.category === category
+    );
+    
+    // Apply stealth mode filtering
+    if (isFeatureEnabled('STEALTH_MODE')) {
+      content = content.map(video => ({ ...video, isPremium: false }));
+    }
+    
+    return content;
+  };
+
+  const getTrendingContent = () => {
+    let content = trendingContent;
+    
+    // Apply stealth mode filtering
+    if (isFeatureEnabled('STEALTH_MODE')) {
+      content = content.map(video => ({ ...video, isPremium: false }));
+    }
+    
+    return content;
   };
 
   const getFreeContent = () => {
-    return content.filter(c => !c.isPremium);
+    return isFeatureEnabled('STEALTH_MODE') ? mockCombatVideos : freeContent;
   };
 
   const getPremiumContent = () => {
-    return content.filter(c => c.isPremium);
+    return isFeatureEnabled('STEALTH_MODE') ? [] : premiumContent;
+  };
+
+  const getCategories = () => {
+    return COMBAT_CATEGORIES;
+  };
+
+  const getOrganizations = () => {
+    const orgs = [...new Set(mockCombatVideos.map(video => video.organization))];
+    return orgs.sort();
+  };
+
+  const getPopularFighters = () => {
+    const fighters = mockCombatVideos.flatMap(video => video.fighters || []);
+    const fighterCounts = fighters.reduce((acc, fighter) => {
+      acc[fighter] = (acc[fighter] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return Object.entries(fighterCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 20)
+      .map(([fighter]) => fighter);
   };
 
   const value = {
-    content,
     featuredContent,
     recommendations,
     loading,
+    searchContent,
     getContentById,
     getContentByCategory,
+    getTrendingContent,
     getFreeContent,
-    getPremiumContent
+    getPremiumContent,
+    getCategories,
+    getOrganizations,
+    getPopularFighters,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    allContent: mockCombatVideos
   };
 
   return (
@@ -175,3 +172,4 @@ export const ContentProvider = ({ children }) => {
     </ContentContext.Provider>
   );
 };
+
