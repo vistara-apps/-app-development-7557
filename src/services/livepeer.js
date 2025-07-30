@@ -1,9 +1,5 @@
-import { Livepeer } from "livepeer";
-
-// Initialize Livepeer client
-const livepeer = new Livepeer({
-  apiKey: import.meta.env.VITE_LIVEPEER_API_KEY || 'your-api-key-here'
-});
+// Mock Livepeer service - using sample data for demo
+// In production, you would integrate with actual Livepeer API
 
 // Sample combat sports videos from Livepeer
 const COMBAT_VIDEOS = [
@@ -90,49 +86,60 @@ export const livepeerService = {
     }
   },
 
-  // Create a new stream (for live streaming)
+  // Create a new stream (for live streaming) - Mock implementation
   createStream: async (name) => {
     try {
-      const response = await livepeer.stream.create({
-        name: name || 'combat-stream'
-      });
-      return response;
+      // Mock stream creation
+      return {
+        id: `stream-${Date.now()}`,
+        name: name || 'combat-stream',
+        status: 'active'
+      };
     } catch (error) {
       console.error('Error creating stream:', error);
       throw error;
     }
   },
 
-  // Get stream info
+  // Get stream info - Mock implementation
   getStream: async (streamId) => {
     try {
-      const response = await livepeer.stream.get(streamId);
-      return response;
+      // Mock stream info
+      return {
+        id: streamId,
+        name: 'combat-stream',
+        status: 'active'
+      };
     } catch (error) {
       console.error('Error getting stream:', error);
       throw error;
     }
   },
 
-  // Get asset info
+  // Get asset info - Mock implementation
   getAsset: async (assetId) => {
     try {
-      const response = await livepeer.asset.get(assetId);
-      return response;
+      // Mock asset info
+      return {
+        id: assetId,
+        name: 'combat-video',
+        status: 'ready'
+      };
     } catch (error) {
       console.error('Error getting asset:', error);
       throw error;
     }
   },
 
-  // Upload video asset
+  // Upload video asset - Mock implementation
   uploadAsset: async (file, name) => {
     try {
-      const response = await livepeer.asset.create({
-        input: file,
-        name: name || 'combat-video'
-      });
-      return response;
+      // Mock upload
+      return {
+        id: `asset-${Date.now()}`,
+        name: name || 'combat-video',
+        status: 'uploading'
+      };
     } catch (error) {
       console.error('Error uploading asset:', error);
       throw error;
