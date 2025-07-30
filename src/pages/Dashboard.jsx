@@ -18,7 +18,7 @@ import {
 const Dashboard = () => {
   const { user, openAuthModal } = useAuth();
   const { transactions, dailyEarnings, getTokenBalance } = useToken();
-  const { content } = useContent();
+  const { allContent } = useContent();
   const { isFeatureEnabled } = useFeatureFlags();
 
   if (!user) {
@@ -267,13 +267,13 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-white font-medium">Content Explorer</span>
                   <span className="text-blue-500 text-sm">
-                    {Math.floor(Math.random() * 10) + 5}/{content.length} videos
+                    {Math.floor(Math.random() * 10) + 5}/{allContent?.length || 0} videos
                   </span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(((Math.floor(Math.random() * 10) + 5) / content.length) * 100, 100)}%` }}
+                    style={{ width: `${Math.min(((Math.floor(Math.random() * 10) + 5) / (allContent?.length || 1)) * 100, 100)}%` }}
                   ></div>
                 </div>
               </div>

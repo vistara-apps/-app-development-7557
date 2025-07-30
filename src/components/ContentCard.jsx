@@ -2,11 +2,13 @@ import React from 'react';
 import { Play, Clock, Lock, Crown, Eye, Users, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
+import { useVideo } from '../context/VideoContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
-const ContentCard = ({ content, onWatch }) => {
+const ContentCard = ({ content }) => {
   const { user, openAuthModal } = useAuth();
   const { spendTokens } = useToken();
+  const { openVideoModal } = useVideo();
   const { isFeatureEnabled } = useFeatureFlags();
 
   const handleWatch = () => {
@@ -17,7 +19,7 @@ const ContentCard = ({ content, onWatch }) => {
 
     // In stealth mode, all content is free
     if (isFeatureEnabled('STEALTH_MODE')) {
-      onWatch(content);
+      openVideoModal(content);
       return;
     }
 
@@ -26,7 +28,7 @@ const ContentCard = ({ content, onWatch }) => {
       if (user.phyghtTokenBalance >= 20) {
         if (confirm(`Unlock this premium fight for 20 Phyght tokens?`)) {
           if (spendTokens(20, `Unlocked: ${content.title}`)) {
-            onWatch(content);
+            openVideoModal(content);
           }
         }
       } else {
@@ -35,7 +37,7 @@ const ContentCard = ({ content, onWatch }) => {
       return;
     }
 
-    onWatch(content);
+    openVideoModal(content);
   };
 
   const canWatch = () => {

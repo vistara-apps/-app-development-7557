@@ -57,12 +57,10 @@ export const TokenProvider = ({ children }) => {
       setTransactions(mockTransactions);
       setDailyEarnings(25);
     }
-  }, [user, isFeatureEnabled, isTokensMinted]);
+  }, [user, isTokensMinted]); // Removed isFeatureEnabled from dependency array
 
   const mintInitialTokens = () => {
     // Simulate token minting - in production this would interact with blockchain
-    console.log(`🪙 Minting ${ADMIN_CONFIG.TOKEN_SUPPLY.toLocaleString()} PHYGHT tokens...`);
-    console.log(`💰 100% supply allocated to owner: ${ADMIN_CONFIG.ADMIN_EMAIL}`);
     
     setIsTokensMinted(true);
     setOwnerBalance(ADMIN_CONFIG.TOKEN_SUPPLY);

@@ -13,14 +13,9 @@ const Home = () => {
   const { dailyEarnings, earnTokens } = useToken();
   const { isFeatureEnabled } = useFeatureFlags();
 
-  const handleWatchContent = (content) => {
-    console.log('Watching content:', content.title);
-    // Simulate earning tokens for watching (only if not in stealth mode)
-    if (user && !isFeatureEnabled('STEALTH_MODE')) {
-      const tokenAmount = user.subscriptionStatus === 'premium' ? 10 : 5;
-      earnTokens(tokenAmount, `Watched: ${content.title}`);
-    }
-  };
+
+
+
 
   const handleGetStarted = () => {
     if (user && !isFeatureEnabled('STEALTH_MODE')) {
@@ -36,6 +31,7 @@ const Home = () => {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Loading amazing content...</p>
+          <p className="text-gray-500 text-sm mt-2">Please wait while we prepare your content</p>
         </div>
       </div>
     );
@@ -59,22 +55,12 @@ const Home = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {!isFeatureEnabled('STEALTH_MODE') && (
-              <button
-                onClick={handleGetStarted}
-                className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 rounded-lg font-medium transition-colors flex items-center justify-center"
-              >
-                <Crown className="w-5 h-5 mr-2" />
-                {user ? 'Upgrade to Premium' : 'Start Free Trial'}
-              </button>
-            )}
-            
             <Link
               to="/browse"
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-medium transition-colors flex items-center justify-center"
             >
               <Play className="w-5 h-5 mr-2" />
-              {isFeatureEnabled('STEALTH_MODE') ? 'Watch Fights Now' : 'Browse Content'}
+              Watch Fights Now
             </Link>
 
             {!user && (
@@ -205,7 +191,6 @@ const Home = () => {
               <ContentCard
                 key={content.id}
                 content={content}
-                onWatch={handleWatchContent}
               />
             ))}
           </div>
@@ -219,45 +204,38 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-white mb-8">Recommended Fights</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.map((content) => (
-                <ContentCard
-                  key={content.id}
-                  content={content}
-                  onWatch={handleWatchContent}
-                />
-              ))}
+                          {recommendations.map((content) => (
+              <ContentCard
+                key={content.id}
+                content={content}
+              />
+            ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* CTA Section */}
-      {!user && (
-        <section className="py-16 px-4 bg-gradient-to-r from-red-900/30 to-orange-900/30">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-white mb-6">
-              {isFeatureEnabled('STEALTH_MODE') 
-                ? 'Join the Combat Community' 
-                : 'Ready to Start Earning?'
-              }
-            </h2>
-            
-            <p className="text-xl text-gray-300 mb-8">
-              {isFeatureEnabled('STEALTH_MODE')
-                ? 'Join thousands of combat sports fans watching the best fights from around the world. Free access to premium content.'
-                : 'Join thousands of members earning Phyght tokens while enjoying premium combat content.'
-              }
-            </p>
+              {/* CTA Section */}
+        {!user && (
+          <section className="py-16 px-4 bg-gradient-to-r from-red-900/30 to-orange-900/30">
+            <div className="max-w-4xl mx-auto text-center">
+              <h2 className="text-3xl font-bold text-white mb-6">
+                Join the Combat Community
+              </h2>
+              
+              <p className="text-xl text-gray-300 mb-8">
+                Join thousands of combat sports fans watching the best fights from around the world.
+              </p>
 
-            <button
-              onClick={() => openAuthModal('register')}
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors"
-            >
-              Create Free Account
-            </button>
-          </div>
-        </section>
-      )}
+              <button
+                onClick={() => openAuthModal('register')}
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors"
+              >
+                Create Free Account
+              </button>
+            </div>
+          </section>
+        )}
     </div>
   );
 };

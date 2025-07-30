@@ -9,13 +9,15 @@ import AdminDashboard from './pages/AdminDashboard';
 import MobileNav from './components/MobileNav';
 import AuthModal from './components/AuthModal';
 import SubscriptionModal from './components/SubscriptionModal';
+import VideoModal from './components/VideoModal';
 import { AuthProvider } from './context/AuthContext';
 import { ContentProvider } from './context/ContentContext';
 import { TokenProvider } from './context/TokenContext';
-import { useFeatureFlags } from './hooks/useFeatureFlags';
+import { VideoProvider, useVideo } from './context/VideoContext';
 
-function App() {
+function AppContent() {
   const [isMobile, setIsMobile] = useState(false);
+  const { isVideoModalOpen, currentVideo, closeVideoModal } = useVideo();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -29,29 +31,42 @@ function App() {
   }, []);
 
   return (
+    <Router>
+      <div className="min-h-screen bg-dark-900">
+        <Header />
+        
+        <main className={isMobile ? "pb-20" : ""}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin-phyght-2024" element={<AdminDashboard />} />
+          </Routes>
+        </main>
+
+        {isMobile && <MobileNav />}
+        
+        <AuthModal />
+        <SubscriptionModal />
+        <VideoModal 
+          isOpen={isVideoModalOpen} 
+          onClose={closeVideoModal} 
+          content={currentVideo}
+        />
+      </div>
+    </Router>
+  );
+}
+
+function App() {
+  return (
     <AuthProvider>
       <TokenProvider>
         <ContentProvider>
-          <Router>
-            <div className="min-h-screen bg-dark-900">
-              <Header />
-              
-              <main className={isMobile ? "pb-20" : ""}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/browse" element={<Browse />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/admin-phyght-2024" element={<AdminDashboard />} />
-                </Routes>
-              </main>
-
-              {isMobile && <MobileNav />}
-              
-              <AuthModal />
-              <SubscriptionModal />
-            </div>
-          </Router>
+          <VideoProvider>
+            <AppContent />
+          </VideoProvider>
         </ContentProvider>
       </TokenProvider>
     </AuthProvider>

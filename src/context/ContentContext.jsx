@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { mockCombatVideos, featuredContent, trendingContent, freeContent, premiumContent } from '../data/mockContent';
 import { COMBAT_CATEGORIES } from '../config/features';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { livepeerService } from '../services/livepeer';
 
 const ContentContext = createContext();
 
@@ -24,38 +25,67 @@ export const ContentProvider = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Simulate API call
+    // Load content from Livepeer
     const loadContent = async () => {
       setLoading(true);
       
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Filter content based on stealth mode
-      let availableContent = mockCombatVideos;
-      if (isFeatureEnabled('STEALTH_MODE')) {
-        // In stealth mode, show all content as free
-        availableContent = mockCombatVideos.map(video => ({
-          ...video,
-          isPremium: false
-        }));
+      try {
+        // Try to load from Livepeer first, fallback to mock data
+        let availableContent = await livepeerService.getCombatVideos();
+        
+        // If Livepeer fails, use mock data
+        if (!availableContent || availableContent.length === 0) {
+          availableContent = mockCombatVideos;
+        }
+        
+        const stealthMode = isFeatureEnabled('STEALTH_MODE');
+        if (stealthMode) {
+          // In stealth mode, show all content as free
+          availableContent = availableContent.map(video => ({
+            ...video,
+            isPremium: false
+          }));
+        }
+        
+        setFeaturedContent(availableContent.slice(0, 6));
+        
+        if (user) {
+          // Generate personalized recommendations based on user preferences
+          const userRecommendations = availableContent.filter(content => 
+            user.subscriptionStatus === 'premium' || !content.isPremium
+          ).slice(6);
+          setRecommendations(userRecommendations);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading content:', error);
+        // Fallback to mock data
+        let availableContent = mockCombatVideos;
+        const stealthMode = isFeatureEnabled('STEALTH_MODE');
+        if (stealthMode) {
+          availableContent = availableContent.map(video => ({
+            ...video,
+            isPremium: false
+          }));
+        }
+        
+        setFeaturedContent(availableContent.slice(0, 6));
+        setLoading(false);
       }
-      
-      setFeaturedContent(availableContent.slice(0, 6));
-      
-      if (user) {
-        // Generate personalized recommendations based on user preferences
-        const userRecommendations = availableContent.filter(content => 
-          user.subscriptionStatus === 'premium' || !content.isPremium
-        ).slice(6);
-        setRecommendations(userRecommendations);
-      }
-      
-      setLoading(false);
     };
 
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 5000);
+
     loadContent();
-  }, [user, isFeatureEnabled]);
+
+    return () => clearTimeout(timeoutId);
+  }, [user]); // Simplified dependency array to prevent infinite re-renders
 
   const searchContent = (query, filters = {}) => {
     let content = mockCombatVideos;

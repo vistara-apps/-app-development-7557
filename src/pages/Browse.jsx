@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useContent } from '../context/ContentContext';
 import { useAuth } from '../context/AuthContext';
-import { useToken } from '../context/TokenContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import ContentCard from '../components/ContentCard';
 import CategoryFilter from '../components/CategoryFilter';
@@ -9,28 +8,21 @@ import SearchBar from '../components/SearchBar';
 import { Search, Filter, Grid, List } from 'lucide-react';
 
 const Browse = () => {
-  const { content, loading, getCategories } = useContent();
+  const { allContent, loading, getCategories } = useContent();
   const { user } = useAuth();
-  const { earnTokens } = useToken();
   const { isFeatureEnabled } = useFeatureFlags();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [viewMode, setViewMode] = useState('grid');
   const [showPremiumOnly, setShowPremiumOnly] = useState(false);
+  const [filters, setFilters] = useState({});
 
   const categories = getCategories();
 
-  const handleWatchContent = (content) => {
-    console.log('Watching content:', content.title);
-    // Simulate earning tokens for watching (only if not in stealth mode)
-    if (user && !isFeatureEnabled('STEALTH_MODE')) {
-      const tokenAmount = user.subscriptionStatus === 'premium' ? 10 : 5;
-      earnTokens(tokenAmount, `Watched: ${content.title}`);
-    }
-  };
 
-  const filteredContent = content
+
+  const filteredContent = allContent || []
     .filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,7 +80,15 @@ const Browse = () => {
         {/* Search and Filters */}
         <div className="mb-8 space-y-6">
           <SearchBar 
-            onSearch={(query) => setSearchTerm(query)}
+            onSearch={(query, searchFilters) => {
+              setSearchTerm(query);
+              if (searchFilters) {
+                setFilters(searchFilters);
+                if (searchFilters.category && searchFilters.category !== 'all') {
+                  setSelectedCategory(searchFilters.category);
+                }
+              }
+            }}
             placeholder={isFeatureEnabled('STEALTH_MODE') 
               ? "Search fights, fighters, organizations..." 
               : "Search content..."
@@ -115,18 +115,7 @@ const Browse = () => {
                 <option value="alphabetical">A-Z</option>
               </select>
 
-              {/* Premium Filter - hidden in stealth mode */}
-              {!isFeatureEnabled('STEALTH_MODE') && (
-                <label className="flex items-center space-x-2 text-white">
-                  <input
-                    type="checkbox"
-                    checked={showPremiumOnly}
-                    onChange={(e) => setShowPremiumOnly(e.target.checked)}
-                    className="rounded text-red-500 focus:ring-red-500"
-                  />
-                  <span className="text-sm">Premium only</span>
-                </label>
-              )}
+
 
               {/* View Mode */}
               <div className="flex border border-gray-600 rounded-lg overflow-hidden">
@@ -152,15 +141,6 @@ const Browse = () => {
           <p className="text-gray-400">
             {filteredContent.length} {filteredContent.length === 1 ? 'result' : 'results'} found
           </p>
-          
-          {user && user.subscriptionStatus !== 'premium' && !isFeatureEnabled('STEALTH_MODE') && (
-            <button
-              onClick={() => window.openSubscriptionModal?.()}
-              className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-            >
-              Unlock All Premium Content
-            </button>
-          )}
         </div>
 
         {/* Content Grid */}
@@ -174,7 +154,6 @@ const Browse = () => {
               <ContentCard
                 key={content.id}
                 content={content}
-                onWatch={handleWatchContent}
               />
             ))}
           </div>
