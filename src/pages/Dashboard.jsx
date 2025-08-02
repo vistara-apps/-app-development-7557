@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
 import { useContent } from '../context/ContentContext';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import { 
   TrendingUp, 
   Coins, 
@@ -17,7 +18,8 @@ import {
 const Dashboard = () => {
   const { user, openAuthModal } = useAuth();
   const { transactions, dailyEarnings, getTokenBalance } = useToken();
-  const { content } = useContent();
+  const { allContent } = useContent();
+  const { isFeatureEnabled } = useFeatureFlags();
 
   if (!user) {
     return (
@@ -27,11 +29,14 @@ const Dashboard = () => {
             <BarChart3 className="w-16 h-16 text-gray-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-white mb-2">Access Your Dashboard</h2>
             <p className="text-gray-400 mb-6">
-              Log in to view your earnings, transaction history, and account statistics.
+              {isFeatureEnabled('STEALTH_MODE') 
+                ? 'Log in to view your watch history, favorites, and account statistics.'
+                : 'Log in to view your earnings, transaction history, and account statistics.'
+              }
             </p>
             <button
               onClick={() => openAuthModal('login')}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               Sign In
             </button>
@@ -41,7 +46,36 @@ const Dashboard = () => {
     );
   }
 
-  const stats = [
+  const stats = isFeatureEnabled('STEALTH_MODE') ? [
+    {
+      label: 'Fights Watched',
+      value: Math.floor(Math.random() * 50) + 10,
+      icon: Eye,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10'
+    },
+    {
+      label: 'Favorite Fighters',
+      value: Math.floor(Math.random() * 15) + 3,
+      icon: Star,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10'
+    },
+    {
+      label: 'Hours Watched',
+      value: Math.floor(Math.random() * 100) + 20,
+      icon: Clock,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500/10'
+    },
+    {
+      label: 'Days Active',
+      value: Math.floor(Math.random() * 30) + 5,
+      icon: Calendar,
+      color: 'text-green-500',
+      bgColor: 'bg-green-500/10'
+    }
+  ] : [
     {
       label: 'Total Tokens',
       value: getTokenBalance(),
@@ -81,15 +115,26 @@ const Dashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
           <p className="text-gray-400">
-            Track your earnings, activity, and account status
+            {isFeatureEnabled('STEALTH_MODE') 
+              ? 'Track your viewing activity, favorites, and account status'
+              : 'Track your earnings, activity, and account status'
+            }
           </p>
         </div>
 
         {/* Account Status */}
-        <div className="bg-gradient-to-r from-primary-900/30 to-purple-900/30 rounded-lg p-6 mb-8">
+        <div className={`rounded-lg p-6 mb-8 ${
+          isFeatureEnabled('STEALTH_MODE') 
+            ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30'
+            : 'bg-gradient-to-r from-primary-900/30 to-purple-900/30'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl ${
+                isFeatureEnabled('STEALTH_MODE')
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500'
+                  : 'bg-gradient-to-r from-primary-500 to-purple-500'
+              }`}>
                 {user.username.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -222,13 +267,13 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-white font-medium">Content Explorer</span>
                   <span className="text-blue-500 text-sm">
-                    {Math.floor(Math.random() * 10) + 5}/{content.length} videos
+                    {Math.floor(Math.random() * 10) + 5}/{allContent?.length || 0} videos
                   </span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(((Math.floor(Math.random() * 10) + 5) / content.length) * 100, 100)}%` }}
+                    style={{ width: `${Math.min(((Math.floor(Math.random() * 10) + 5) / (allContent?.length || 1)) * 100, 100)}%` }}
                   ></div>
                 </div>
               </div>

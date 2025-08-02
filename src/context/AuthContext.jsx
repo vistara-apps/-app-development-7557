@@ -31,11 +31,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Simulate loading user data
     const timer = setTimeout(() => {
-      const savedUser = localStorage.getItem('phyght_user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
+      try {
+        const savedUser = localStorage.getItem('phyght_user');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }, 1000);
 
     return () => clearTimeout(timer);

@@ -1,11 +1,15 @@
 import React from 'react';
-import { Play, Clock, Lock, Crown, Eye } from 'lucide-react';
+import { Play, Clock, Lock, Crown, Eye, Users, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
+import { useVideo } from '../context/VideoContext';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
-const ContentCard = ({ content, onWatch }) => {
+const ContentCard = ({ content }) => {
   const { user, openAuthModal } = useAuth();
   const { spendTokens } = useToken();
+  const { openVideoModal } = useVideo();
+  const { isFeatureEnabled } = useFeatureFlags();
 
   const handleWatch = () => {
     if (!user) {
@@ -13,12 +17,18 @@ const ContentCard = ({ content, onWatch }) => {
       return;
     }
 
+    // In stealth mode, all content is free
+    if (isFeatureEnabled('STEALTH_MODE')) {
+      openVideoModal(content);
+      return;
+    }
+
     if (content.isPremium && user.subscriptionStatus !== 'premium') {
       // Try to unlock with tokens or show subscription modal
       if (user.phyghtTokenBalance >= 20) {
-        if (confirm(`Unlock this premium content for 20 Phyght tokens?`)) {
+        if (confirm(`Unlock this premium fight for 20 Phyght tokens?`)) {
           if (spendTokens(20, `Unlocked: ${content.title}`)) {
-            onWatch(content);
+            openVideoModal(content);
           }
         }
       } else {
@@ -27,10 +37,11 @@ const ContentCard = ({ content, onWatch }) => {
       return;
     }
 
-    onWatch(content);
+    openVideoModal(content);
   };
 
   const canWatch = () => {
+    if (isFeatureEnabled('STEALTH_MODE')) return true;
     if (!content.isPremium) return true;
     if (user?.subscriptionStatus === 'premium') return true;
     if (user?.phyghtTokenBalance >= 20) return true;
@@ -56,8 +67,8 @@ const ContentCard = ({ content, onWatch }) => {
           </button>
         </div>
 
-        {/* Premium badge */}
-        {content.isPremium && (
+        {/* Premium badge - hidden in stealth mode */}
+        {content.isPremium && !isFeatureEnabled('STEALTH_MODE') && (
           <div className="absolute top-2 left-2">
             {user?.subscriptionStatus === 'premium' ? (
               <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-2 py-1 rounded-full flex items-center space-x-1">
@@ -72,6 +83,15 @@ const ContentCard = ({ content, onWatch }) => {
             )}
           </div>
         )}
+
+        {/* Combat category badge */}
+        <div className="absolute top-2 right-2">
+          <div className="bg-red-600 bg-opacity-90 px-2 py-1 rounded-full">
+            <span className="text-xs font-medium text-white uppercase">
+              {content.category?.replace('-', ' ') || 'Combat'}
+            </span>
+          </div>
+        </div>
 
         {/* Duration */}
         <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 px-2 py-1 rounded flex items-center space-x-1">
@@ -88,6 +108,20 @@ const ContentCard = ({ content, onWatch }) => {
         <p className="text-gray-400 text-sm mb-3 line-clamp-2">
           {content.description}
         </p>
+
+        {/* Combat-specific metadata */}
+        {content.fighters && (
+          <div className="mb-2">
+            <p className="text-sm text-red-400 font-medium">
+              {content.fighters.join(' vs ')}
+            </p>
+            {content.organization && (
+              <p className="text-xs text-gray-500">
+                {content.organization} • {content.weightClass}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-1">
@@ -107,14 +141,15 @@ const ContentCard = ({ content, onWatch }) => {
           disabled={!canWatch() && !user}
           className={`w-full mt-3 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             canWatch() || !user
-              ? 'bg-primary-600 hover:bg-primary-700 text-white'
+              ? 'bg-red-600 hover:bg-red-700 text-white'
               : 'bg-gray-600 text-gray-300 cursor-not-allowed'
           }`}
         >
           {!user ? 'Login to Watch' : 
+           isFeatureEnabled('STEALTH_MODE') ? 'Watch Fight' :
            content.isPremium && user.subscriptionStatus !== 'premium' 
              ? user.phyghtTokenBalance >= 20 ? 'Unlock (20 tokens)' : 'Upgrade to Premium'
-             : 'Watch Now'}
+             : 'Watch Fight'}
         </button>
       </div>
     </div>

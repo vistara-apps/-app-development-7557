@@ -1,0 +1,210 @@
+// Mock combat video content data
+export const mockCombatVideos = [
+  {
+    id: '1',
+    title: 'UFC 300: Jones vs Miocic - Full Fight Highlights',
+    description: 'Epic heavyweight championship bout featuring two legends of the sport in an unforgettable main event.',
+    type: 'highlight',
+    category: 'mma',
+    duration: '15:32',
+    previewThumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=800&h=450&fit=crop',
+    contentFile: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    isPremium: false,
+    views: 1250000,
+    rating: 4.8,
+    uploadDate: '2024-07-25',
+    fighters: ['Jon Jones', 'Stipe Miocic'],
+    event: 'UFC 300',
+    organization: 'UFC',
+    weightClass: 'Heavyweight',
+    tags: ['championship', 'knockout', 'highlights']
+  },
+  {
+    id: '2',
+    title: 'Canelo vs GGG 3: The Trilogy Conclusion',
+    description: 'The final chapter in one of boxing\'s greatest rivalries. Two warriors settle their differences once and for all.',
+    type: 'full-fight',
+    category: 'boxing',
+    duration: '45:18',
+    previewThumbnail: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=450&fit=crop',
+    contentFile: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    isPremium: true,
+    views: 890000,
+    rating: 4.6,
+    uploadDate: '2024-07-20',
+    fighters: ['Canelo Alvarez', 'Gennady Golovkin'],
+    event: 'Canelo vs GGG 3',
+    organization: 'DAZN',
+    weightClass: 'Super Middleweight',
+    tags: ['trilogy', 'championship', 'decision']
+  },
+  {
+    id: '3',
+    title: 'ONE Championship: Muay Thai Madness',
+    description: 'Explosive Muay Thai action from Singapore featuring the best strikers in the world.',
+    type: 'highlight',
+    category: 'muay-thai',
+    duration: '12:45',
+    previewThumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=450&fit=crop',
+    contentFile: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    isPremium: false,
+    views: 650000,
+    rating: 4.7,
+    uploadDate: '2024-07-18',
+    fighters: ['Rodtang Jitmuangnon', 'Superlek Kiatmoo9'],
+    event: 'ONE Friday Fights',
+    organization: 'ONE Championship',
+    weightClass: 'Flyweight',
+    tags: ['muay-thai', 'knockout', 'thailand']
+  },
+  {
+    id: '4',
+    title: 'ADCC 2024: Gordon Ryan vs Andre Galvao',
+    description: 'The king of no-gi grappling faces his toughest challenge in this absolute division superfight.',
+    type: 'full-match',
+    category: 'bjj',
+    duration: '28:15',
+    previewThumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=800&h=450&fit=crop',
+    contentFile: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    isPremium: true,
+    views: 420000,
+    rating: 4.9,
+    uploadDate: '2024-07-15',
+    fighters: ['Gordon Ryan', 'Andre Galvao'],
+    event: 'ADCC 2024',
+    organization: 'ADCC',
+    weightClass: 'Absolute',
+    tags: ['submission', 'no-gi', 'superfight']
+  },
+  {
+    id: '5',
+    title: 'Bellator 300: Pitbull Brothers Domination',
+    description: 'Both Pitbull brothers defend their titles on the same night in spectacular fashion.',
+    type: 'highlight',
+    category: 'mma',
+    duration: '18:22',
+    previewThumbnail: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=450&fit=crop',
+    contentFile: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    isPremium: false,
+    views: 780000,
+    rating: 4.5,
+    uploadDate: '2024-07-12',
+    fighters: ['Patricio Pitbull', 'Patricky Pitbull'],
+    event: 'Bellator 300',
+    organization: 'Bellator',
+    weightClass: 'Multiple',
+    tags: ['championship', 'brothers', 'double-header']
+  },
+  {
+    id: '6',
+    title: 'Glory Kickboxing: Heavyweight Tournament Final',
+    description: 'The world\'s best heavyweight kickboxers battle for tournament glory and the championship belt.',
+    type: 'full-fight',
+    category: 'kickboxing',
+    duration: '35:40',
+    previewThumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=450&fit=crop',
+    contentFile: 'https://example.com/videos/glory-tournament.mp4',
+    isPremium: true,
+    views: 320000,
+    rating: 4.4,
+    uploadDate: '2024-07-10',
+    fighters: ['Rico Verhoeven', 'Badr Hari'],
+    event: 'Glory 95',
+    organization: 'Glory',
+    weightClass: 'Heavyweight',
+    tags: ['tournament', 'final', 'kickboxing']
+  },
+  {
+    id: '7',
+    title: 'Wrestling World Championships: USA vs Iran',
+    description: 'International wrestling at its finest as two powerhouse nations clash for supremacy.',
+    type: 'highlight',
+    category: 'wrestling',
+    duration: '22:18',
+    previewThumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=800&h=450&fit=crop',
+    contentFile: 'https://example.com/videos/wrestling-worlds.mp4',
+    isPremium: false,
+    views: 540000,
+    rating: 4.6,
+    uploadDate: '2024-07-08',
+    fighters: ['David Taylor', 'Hassan Yazdani'],
+    event: 'World Wrestling Championships',
+    organization: 'UWW',
+    weightClass: '86kg',
+    tags: ['world-championship', 'freestyle', 'international']
+  },
+  {
+    id: '8',
+    title: 'Karate Combat: Point Fighting Evolution',
+    description: 'Traditional karate meets modern competition in this innovative full-contact format.',
+    type: 'full-match',
+    category: 'karate',
+    duration: '25:30',
+    previewThumbnail: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=450&fit=crop',
+    contentFile: 'https://example.com/videos/karate-combat.mp4',
+    isPremium: true,
+    views: 280000,
+    rating: 4.3,
+    uploadDate: '2024-07-05',
+    fighters: ['Rafael Aghayev', 'Luigi Busa'],
+    event: 'Karate Combat 45',
+    organization: 'Karate Combat',
+    weightClass: '75kg',
+    tags: ['karate', 'point-fighting', 'traditional']
+  },
+  {
+    id: '9',
+    title: 'Training with Champions: Khabib\'s Wrestling Secrets',
+    description: 'Go behind the scenes with the undefeated champion as he shares his wrestling techniques.',
+    type: 'training',
+    category: 'training',
+    duration: '32:15',
+    previewThumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=450&fit=crop',
+    contentFile: 'https://example.com/videos/khabib-training.mp4',
+    isPremium: false,
+    views: 1100000,
+    rating: 4.9,
+    uploadDate: '2024-07-03',
+    fighters: ['Khabib Nurmagomedov'],
+    event: 'Training Session',
+    organization: 'Independent',
+    weightClass: 'N/A',
+    tags: ['training', 'wrestling', 'technique', 'educational']
+  },
+  {
+    id: '10',
+    title: 'Judo Grand Slam: Tokyo Spectacular',
+    description: 'The best judoka in the world compete in the spiritual home of judo for Olympic qualification.',
+    type: 'highlight',
+    category: 'judo',
+    duration: '19:45',
+    previewThumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=800&h=450&fit=crop',
+    contentFile: 'https://example.com/videos/judo-tokyo.mp4',
+    isPremium: false,
+    views: 380000,
+    rating: 4.5,
+    uploadDate: '2024-07-01',
+    fighters: ['Teddy Riner', 'Lukas Krpalek'],
+    event: 'Judo Grand Slam Tokyo',
+    organization: 'IJF',
+    weightClass: '+100kg',
+    tags: ['judo', 'grand-slam', 'olympic', 'japan']
+  }
+];
+
+// Featured content (mix of free and premium)
+export const featuredContent = mockCombatVideos.slice(0, 6);
+
+// Trending content
+export const trendingContent = mockCombatVideos
+  .sort((a, b) => b.views - a.views)
+  .slice(0, 8);
+
+// Free content only
+export const freeContent = mockCombatVideos.filter(video => !video.isPremium);
+
+// Premium content only
+export const premiumContent = mockCombatVideos.filter(video => video.isPremium);
+
+export default mockCombatVideos;
+

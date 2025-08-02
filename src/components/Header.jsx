@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
-import { User, Menu, X, Crown, Coins } from 'lucide-react';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { User, Menu, X, Crown, Coins, Zap, Shield } from 'lucide-react';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout, openAuthModal } = useAuth();
   const { getTokenBalance } = useToken();
+  const { isFeatureEnabled, isAdmin } = useFeatureFlags();
   const location = useLocation();
 
   const navigation = [
@@ -23,10 +25,13 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-              <Crown className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold gradient-text">Phyght</span>
+            <span className="text-xl font-bold text-red-500">Phyght</span>
+            {isAdmin && (
+              <Shield className="w-4 h-4 text-yellow-500" title="Admin Access" />
+            )}
           </Link>
 
           {/* Desktop Navigation */}
@@ -37,7 +42,7 @@ const Header = () => {
                 to={item.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   item.current
-                    ? 'text-primary-500 border-b-2 border-primary-500'
+                    ? 'text-red-500 border-b-2 border-red-500'
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
@@ -48,16 +53,27 @@ const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            {user && (
+            {user && !isFeatureEnabled('STEALTH_MODE') && (
               <div className="hidden sm:flex items-center space-x-2 bg-dark-900 px-3 py-1 rounded-full">
                 <Coins className="w-4 h-4 text-yellow-500" />
                 <span className="text-sm font-medium">{getTokenBalance()}</span>
               </div>
             )}
 
+            {/* Admin Dashboard Access */}
+            {isAdmin && (
+              <Link
+                to="/admin-phyght-2024"
+                className="hidden sm:flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded-full text-white text-sm transition-colors"
+              >
+                <Shield className="w-3 h-3" />
+                <span>Admin</span>
+              </Link>
+            )}
+
             {user ? (
               <div className="flex items-center space-x-4">
-                {user.subscriptionStatus === 'premium' && (
+                {user.subscriptionStatus === 'premium' && !isFeatureEnabled('STEALTH_MODE') && (
                   <div className="hidden sm:flex items-center space-x-1 bg-gradient-to-r from-yellow-500 to-yellow-600 px-2 py-1 rounded-full">
                     <Crown className="w-3 h-3" />
                     <span className="text-xs font-medium text-white">Premium</span>
