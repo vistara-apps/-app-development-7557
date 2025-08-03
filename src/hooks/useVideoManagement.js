@@ -15,12 +15,26 @@ export function useVideoManagement() {
   // Real-time subscription cleanup
   const unsubscribeRef = useRef(null);
 
+  // Helper to check if Supabase is configured
+  const isSupabaseConfigured = () => {
+    return import.meta.env.VITE_SUPABASE_URL && 
+           import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co';
+  };
+
   // Load videos with filters
   const loadVideos = useCallback(async (options = {}) => {
     setLoading(true);
     setError(null);
 
     try {
+      // Check if Supabase is properly configured
+      if (!isSupabaseConfigured()) {
+        console.warn('Supabase not configured, using mock data');
+        setVideos([]);
+        setPagination({ page: 1, limit: 20, total: 0, totalPages: 0 });
+        return;
+      }
+
       const response = await videoAPI.getVideos({
         page: pagination.page,
         limit: pagination.limit,
@@ -39,6 +53,10 @@ export function useVideoManagement() {
 
   // Create a new video
   const createVideo = useCallback(async (videoData) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
     setLoading(true);
     setError(null);
 
