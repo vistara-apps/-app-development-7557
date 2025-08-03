@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { handleCors, createResponse, createErrorResponse } from '../_shared/cors.ts';
 import { getAuthenticatedUser, requireAdminOrModerator } from '../_shared/auth.ts';
+import { uploadVideo, getStorageConfig, getStorageStatus } from '../_shared/storage.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -59,57 +60,44 @@ async function handleVideoUpload(req: Request, supabase: any, user: any) {
   }
 
   try {
-    // Generate unique file paths
-    const timestamp = Date.now();
-    const videoExtension = videoFile.name.split('.').pop();
-    const videoPath = `${videoId}/${timestamp}.${videoExtension}`;
-    
-    let thumbnailPath = null;
-    if (thumbnailFile) {
-      const thumbnailExtension = thumbnailFile.name.split('.').pop();
-      thumbnailPath = `${videoId}/${timestamp}_thumb.${thumbnailExtension}`;
+    // Get storage configuration
+    const storageConfig = getStorageConfig();
+    console.log('Using storage provider:', storageConfig.provider);
+
+    // Upload using storage abstraction layer
+    const uploadResult = await uploadVideo(videoId, videoFile, thumbnailFile, storageConfig);
+
+    // Update video record with upload results
+    const updateData: any = {
+      file_size: uploadResult.file_size,
+      mime_type: uploadResult.mime_type,
+      status: 'processing',
+      last_modified_by: user.id,
+      upload_metadata: uploadResult.upload_metadata,
+    };
+
+    // Add storage-specific fields
+    if (uploadResult.storage_provider === 'aws') {
+      updateData.storage_provider = 'aws';
+      updateData.s3_key = uploadResult.s3_key;
+      updateData.s3_thumbnail_key = uploadResult.s3_thumbnail_key;
+      updateData.s3_bucket = uploadResult.s3_bucket;
+      updateData.s3_region = uploadResult.s3_region;
+      updateData.cloudfront_url = uploadResult.cloudfront_url;
+      updateData.cloudfront_thumbnail_url = uploadResult.cloudfront_thumbnail_url;
+      updateData.storage_class = 'STANDARD_IA';
+      // Keep file_path for backward compatibility
+      updateData.file_path = uploadResult.s3_key;
+      updateData.thumbnail_path = uploadResult.s3_thumbnail_key;
+    } else {
+      updateData.storage_provider = 'supabase';
+      updateData.file_path = uploadResult.file_path;
+      updateData.thumbnail_path = uploadResult.thumbnail_path;
     }
 
-    // Upload video file
-    const { data: videoUpload, error: videoError } = await supabase.storage
-      .from('videos')
-      .upload(videoPath, videoFile, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (videoError) {
-      throw new Error(`Failed to upload video: ${videoError.message}`);
-    }
-
-    // Upload thumbnail if provided
-    let thumbnailUpload = null;
-    if (thumbnailFile && thumbnailPath) {
-      const { data: thumbUpload, error: thumbError } = await supabase.storage
-        .from('thumbnails')
-        .upload(thumbnailPath, thumbnailFile, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (thumbError) {
-        console.warn('Failed to upload thumbnail:', thumbError.message);
-      } else {
-        thumbnailUpload = thumbUpload;
-      }
-    }
-
-    // Update video record with file paths
     const { data: video, error: updateError } = await supabase
       .from('videos')
-      .update({
-        file_path: videoPath,
-        thumbnail_path: thumbnailPath,
-        file_size: videoFile.size,
-        mime_type: videoFile.type,
-        status: 'processing',
-        last_modified_by: user.id,
-      })
+      .update(updateData)
       .eq('id', videoId)
       .select(`
         id,
@@ -127,17 +115,21 @@ async function handleVideoUpload(req: Request, supabase: any, user: any) {
         view_count,
         vector_clock,
         version,
+        storage_provider,
+        s3_key,
+        s3_thumbnail_key,
+        s3_bucket,
+        s3_region,
+        cloudfront_url,
+        cloudfront_thumbnail_url,
+        storage_class,
+        upload_metadata,
         created_at,
         updated_at
       `)
       .single();
 
     if (updateError) {
-      // Clean up uploaded files if database update fails
-      await supabase.storage.from('videos').remove([videoPath]);
-      if (thumbnailPath) {
-        await supabase.storage.from('thumbnails').remove([thumbnailPath]);
-      }
       throw new Error(`Failed to update video record: ${updateError.message}`);
     }
 
@@ -154,34 +146,36 @@ async function handleVideoUpload(req: Request, supabase: any, user: any) {
       video_id: videoId,
       operation_type: 'upload_video',
       operation_data: {
-        file_path: videoPath,
-        thumbnail_path: thumbnailPath,
-        file_size: videoFile.size,
-        mime_type: videoFile.type,
+        storage_provider: uploadResult.storage_provider,
+        file_path: uploadResult.file_path,
+        thumbnail_path: uploadResult.thumbnail_path,
+        s3_key: uploadResult.s3_key,
+        s3_thumbnail_key: uploadResult.s3_thumbnail_key,
+        file_size: uploadResult.file_size,
+        mime_type: uploadResult.mime_type,
+        upload_metadata: uploadResult.upload_metadata,
       },
       vector_clock: video.vector_clock,
       actor_id: user.id,
     });
 
-    // Get public URLs
-    const { data: videoUrl } = supabase.storage
-      .from('videos')
-      .getPublicUrl(videoPath);
+    // Prepare response with appropriate URLs
+    const responseData = {
+      ...video,
+      upload_status: 'success',
+      storage_status: getStorageStatus(),
+    };
 
-    let thumbnailUrl = null;
-    if (thumbnailPath) {
-      const { data: thumbUrl } = supabase.storage
-        .from('thumbnails')
-        .getPublicUrl(thumbnailPath);
-      thumbnailUrl = thumbUrl.publicUrl;
+    // Add URLs based on storage provider
+    if (uploadResult.storage_provider === 'aws') {
+      responseData.video_url = uploadResult.cloudfront_url || uploadResult.s3_key;
+      responseData.thumbnail_url = uploadResult.cloudfront_thumbnail_url || uploadResult.s3_thumbnail_key;
+    } else {
+      responseData.video_url = uploadResult.video_url;
+      responseData.thumbnail_url = uploadResult.thumbnail_url;
     }
 
-    return createResponse({
-      ...video,
-      video_url: videoUrl.publicUrl,
-      thumbnail_url: thumbnailUrl,
-      upload_status: 'success',
-    });
+    return createResponse(responseData);
 
   } catch (error) {
     console.error('Upload error:', error);
