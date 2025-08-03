@@ -20,17 +20,21 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-dark-800 border-b border-gray-700 sticky top-0 z-40">
+    <header className="bg-dark-950 border-b border-dark-800 sticky top-0 z-40 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+          {/* Logo - Pornhub style */}
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="flex items-center">
+              <div className="bg-white text-black px-3 py-1 rounded-sm font-bold text-lg">
+                Phyght
+              </div>
+              <div className="bg-primary-500 text-white px-2 py-1 rounded-sm font-bold text-lg ml-1">
+                TV
+              </div>
             </div>
-            <span className="text-xl font-bold text-red-500">Phyght</span>
             {isAdmin && (
-              <Shield className="w-4 h-4 text-yellow-500" title="Admin Access" />
+              <Shield className="w-4 h-4 text-secondary-500" title="Admin Access" />
             )}
           </Link>
 
@@ -42,8 +46,8 @@ const Header = () => {
                 to={item.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   item.current
-                    ? 'text-red-500 border-b-2 border-red-500'
-                    : 'text-gray-300 hover:text-white'
+                    ? 'text-primary-500 border-b-2 border-primary-500'
+                    : 'text-gray-300 hover:text-white hover:text-primary-400'
                 }`}
               >
                 {item.name}
@@ -54,9 +58,9 @@ const Header = () => {
           {/* Right side */}
           <div className="flex items-center space-x-4">
             {user && !isFeatureEnabled('STEALTH_MODE') && (
-              <div className="hidden sm:flex items-center space-x-2 bg-dark-900 px-3 py-1 rounded-full">
-                <Coins className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium">{getTokenBalance()}</span>
+              <div className="hidden sm:flex items-center space-x-2 bg-dark-900 px-3 py-1 rounded-full border border-dark-700">
+                <Coins className="w-4 h-4 text-secondary-500" />
+                <span className="text-sm font-medium text-white">{getTokenBalance()}</span>
               </div>
             )}
 
@@ -64,7 +68,7 @@ const Header = () => {
             {isAdmin && (
               <Link
                 to="/admin-phyght-2024"
-                className="hidden sm:flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded-full text-white text-sm transition-colors"
+                className="hidden sm:flex items-center space-x-1 bg-secondary-600 hover:bg-secondary-700 px-3 py-1 rounded-sm text-white text-sm transition-colors font-medium"
               >
                 <Shield className="w-3 h-3" />
                 <span>Admin</span>
@@ -74,7 +78,7 @@ const Header = () => {
             {user ? (
               <div className="flex items-center space-x-4">
                 {user.subscriptionStatus === 'premium' && !isFeatureEnabled('STEALTH_MODE') && (
-                  <div className="hidden sm:flex items-center space-x-1 bg-gradient-to-r from-yellow-500 to-yellow-600 px-2 py-1 rounded-full">
+                  <div className="hidden sm:flex items-center space-x-1 bg-gradient-to-r from-secondary-500 to-secondary-600 px-2 py-1 rounded-sm">
                     <Crown className="w-3 h-3" />
                     <span className="text-xs font-medium text-white">Premium</span>
                   </div>
@@ -110,7 +114,7 @@ const Header = () => {
                 </button>
                 <button
                   onClick={() => openAuthModal('register')}
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="ph-button px-4 py-2 text-sm"
                 >
                   Join Now
                 </button>

@@ -11,10 +11,8 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange, className = '' }) 
       {/* All Categories */}
       <button
         onClick={() => onCategoryChange('all')}
-        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-          selectedCategory === 'all'
-            ? 'bg-red-600 text-white'
-            : 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
+        className={`category-pill px-4 py-2 rounded-sm text-sm font-medium ${
+          selectedCategory === 'all' ? 'active' : ''
         }`}
       >
         All Fights
@@ -25,10 +23,8 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange, className = '' }) 
         <button
           key={category.id}
           onClick={() => onCategoryChange(category.id)}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center space-x-2 ${
-            selectedCategory === category.id
-              ? 'bg-red-600 text-white'
-              : 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
+          className={`category-pill px-4 py-2 rounded-sm text-sm font-medium flex items-center space-x-2 ${
+            selectedCategory === category.id ? 'active' : ''
           }`}
         >
           <span>{category.icon}</span>
@@ -40,4 +36,3 @@ const CategoryFilter = ({ selectedCategory, onCategoryChange, className = '' }) 
 };
 
 export default CategoryFilter;
-

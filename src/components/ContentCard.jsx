@@ -49,7 +49,7 @@ const ContentCard = ({ content }) => {
   };
 
   return (
-    <div className="bg-dark-800 rounded-lg overflow-hidden card-hover group">
+    <div className="bg-dark-850 rounded-lg overflow-hidden card-hover group border border-dark-700">
       <div className="relative aspect-video">
         <img
           src={content.previewThumbnail}
@@ -58,10 +58,10 @@ const ContentCard = ({ content }) => {
           loading="lazy"
         />
         
-        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+        <div className="absolute inset-0 video-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           <button
             onClick={handleWatch}
-            className="bg-primary-600 hover:bg-primary-700 text-white p-3 rounded-full transition-colors"
+            className="bg-primary-500 hover:bg-primary-600 text-white p-3 rounded-full transition-all duration-200 transform hover:scale-110 shadow-glow"
           >
             <Play className="w-6 h-6" />
           </button>
@@ -71,14 +71,14 @@ const ContentCard = ({ content }) => {
         {content.isPremium && !isFeatureEnabled('STEALTH_MODE') && (
           <div className="absolute top-2 left-2">
             {user?.subscriptionStatus === 'premium' ? (
-              <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-2 py-1 rounded-full flex items-center space-x-1">
+              <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-2 py-1 rounded-sm flex items-center space-x-1">
                 <Crown className="w-3 h-3" />
                 <span className="text-xs font-medium text-white">Premium</span>
               </div>
             ) : (
-              <div className="bg-gray-900 bg-opacity-80 px-2 py-1 rounded-full flex items-center space-x-1">
-                <Lock className="w-3 h-3 text-yellow-500" />
-                <span className="text-xs font-medium text-yellow-500">Premium</span>
+              <div className="bg-dark-900 bg-opacity-90 px-2 py-1 rounded-sm flex items-center space-x-1 border border-secondary-500/30">
+                <Lock className="w-3 h-3 text-secondary-500" />
+                <span className="text-xs font-medium text-secondary-500">Premium</span>
               </div>
             )}
           </div>
@@ -86,7 +86,7 @@ const ContentCard = ({ content }) => {
 
         {/* Combat category badge */}
         <div className="absolute top-2 right-2">
-          <div className="bg-red-600 bg-opacity-90 px-2 py-1 rounded-full">
+          <div className="bg-primary-500 bg-opacity-90 px-2 py-1 rounded-sm">
             <span className="text-xs font-medium text-white uppercase">
               {content.category?.replace('-', ' ') || 'Combat'}
             </span>
@@ -112,7 +112,7 @@ const ContentCard = ({ content }) => {
         {/* Combat-specific metadata */}
         {content.fighters && (
           <div className="mb-2">
-            <p className="text-sm text-red-400 font-medium">
+            <p className="text-sm text-primary-400 font-medium">
               {content.fighters.join(' vs ')}
             </p>
             {content.organization && (
@@ -139,9 +139,9 @@ const ContentCard = ({ content }) => {
         <button
           onClick={handleWatch}
           disabled={!canWatch() && !user}
-          className={`w-full mt-3 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+          className={`w-full mt-3 py-2 px-4 rounded-sm text-sm font-medium transition-all duration-200 ${
             canWatch() || !user
-              ? 'bg-red-600 hover:bg-red-700 text-white'
+              ? 'ph-button'
               : 'bg-gray-600 text-gray-300 cursor-not-allowed'
           }`}
         >
