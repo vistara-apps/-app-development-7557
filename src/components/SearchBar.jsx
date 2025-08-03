@@ -64,7 +64,7 @@ const SearchBar = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="block w-full pl-10 pr-12 py-3 border border-gray-600 rounded-lg bg-dark-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          className="search-bar block w-full pl-10 pr-12 py-3 rounded-sm text-white placeholder-gray-400 focus:outline-none"
         />
 
         <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-3">
@@ -80,7 +80,7 @@ const SearchBar = ({
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`text-gray-400 hover:text-white transition-colors ${
-              showFilters ? 'text-red-500' : ''
+              showFilters ? 'text-primary-500' : ''
             }`}
           >
             <Filter className="h-5 w-5" />
@@ -90,7 +90,7 @@ const SearchBar = ({
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div className="bg-dark-800 rounded-lg p-4 space-y-4">
+        <div className="bg-dark-850 rounded-lg p-4 space-y-4 border border-dark-700">
           <h4 className="text-white font-medium">Advanced Filters</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -185,4 +185,3 @@ const SearchBar = ({
 };
 
 export default SearchBar;
-

@@ -52,9 +52,9 @@ const Browse = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 loading-spinner mx-auto mb-4"></div>
           <p className="text-gray-400">Loading fight library...</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ const Browse = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 py-8 px-4">
+    <div className="min-h-screen bg-dark-950 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -106,7 +106,7 @@ const Browse = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 bg-dark-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500"
+                className="px-4 py-2 bg-dark-850 border border-dark-600 rounded-sm text-white focus:outline-none focus:border-primary-500 transition-colors"
               >
                 <option value="popular">Popular</option>
                 <option value="newest">Newest</option>
@@ -118,16 +118,16 @@ const Browse = () => {
 
 
               {/* View Mode */}
-              <div className="flex border border-gray-600 rounded-lg overflow-hidden">
+              <div className="flex border border-dark-600 rounded-sm overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-primary-500 text-white' : 'text-gray-400 hover:text-white hover:bg-dark-700'}`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-primary-500 text-white' : 'text-gray-400 hover:text-white hover:bg-dark-700'}`}
                 >
                   <List className="w-4 h-4" />
                 </button>
