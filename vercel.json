@@ -2,21 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {
-    "app/api/**/*.js": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "s-maxage=86400"
-        }
-      ]
-    },
     {
       "source": "/videos/(.*)",
       "headers": [
@@ -61,12 +47,6 @@
       ]
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/videos/:path*",
-      "destination": "/api/videos/:path*"
-    }
-  ],
   "redirects": [
     {
       "source": "/admin",
@@ -81,4 +61,3 @@
     "silent": true
   }
 }
-
