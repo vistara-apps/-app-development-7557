@@ -8,6 +8,9 @@ import VideoList from '../components/admin/VideoList';
 import VideoUpload from '../components/admin/VideoUpload';
 import VideoEditModal from '../components/admin/VideoEditModal';
 import VideoAnalytics from '../components/admin/VideoAnalytics';
+import ModerationProvider from '../context/ModerationContext';
+import ModerationQueue from '../components/moderation/ModerationQueue';
+import ModerationDemo from '../components/moderation/ModerationDemo';
 import { 
   Crown, 
   Coins, 
@@ -26,7 +29,9 @@ import {
   Play,
   Clock,
   CheckCircle,
-  HardDrive
+  HardDrive,
+  Bot,
+  FileCheck
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -137,6 +142,8 @@ const AdminDashboard = () => {
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
             { id: 'videos', label: 'Video Management', icon: Video },
+            { id: 'moderation', label: 'Content Moderation', icon: Bot },
+            { id: 'demo', label: 'Moderation Demo', icon: FileCheck },
             { id: 'tokens', label: 'Token Management', icon: Coins },
             { id: 'features', label: 'Feature Control', icon: Settings },
             { id: 'analytics', label: 'Analytics', icon: Activity }
@@ -291,6 +298,20 @@ const AdminDashboard = () => {
               onUploadClick={() => setShowUploadModal(true)}
             />
           </div>
+        )}
+
+        {/* Content Moderation Tab */}
+        {activeTab === 'moderation' && (
+          <ModerationProvider>
+            <ModerationQueue />
+          </ModerationProvider>
+        )}
+
+        {/* Moderation Demo Tab */}
+        {activeTab === 'demo' && (
+          <ModerationProvider>
+            <ModerationDemo />
+          </ModerationProvider>
         )}
 
         {/* Token Management Tab */}
