@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
+import { useVideo } from '../context/VideoContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import { ADMIN_CONFIG, FEATURE_FLAGS } from '../config/features';
+import VideoList from '../components/admin/VideoList';
+import VideoUpload from '../components/admin/VideoUpload';
+import VideoEditModal from '../components/admin/VideoEditModal';
+import VideoAnalytics from '../components/admin/VideoAnalytics';
 import { 
   Crown, 
   Coins, 
@@ -15,17 +20,29 @@ import {
   DollarSign,
   TrendingUp,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Video,
+  Upload,
+  Play,
+  Clock,
+  CheckCircle,
+  HardDrive
 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { getMintingInfo, getOwnerBalance, getTokenSupply, transferTokens } = useToken();
+  const { videoStats, loading: videoLoading } = useVideo();
   const { isAdmin, toggleFeature, FEATURE_FLAGS: currentFlags } = useFeatureFlags();
   const [activeTab, setActiveTab] = useState('overview');
   const [transferAmount, setTransferAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
   const [stealthMode, setStealthMode] = useState(FEATURE_FLAGS.STEALTH_MODE);
+  
+  // Video management state
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   // Redirect if not admin
   useEffect(() => {
@@ -79,6 +96,29 @@ const AdminDashboard = () => {
     growthRate: 23.5
   };
 
+  // Video management handlers
+  const handleEditVideo = (video) => {
+    setSelectedVideo(video);
+    setShowEditModal(true);
+  };
+
+  const handleUploadSuccess = () => {
+    setShowUploadModal(false);
+  };
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false);
+    setSelectedVideo(null);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <div className="min-h-screen bg-dark-900 p-4">
       <div className="max-w-7xl mx-auto">
@@ -96,6 +136,7 @@ const AdminDashboard = () => {
         <div className="flex space-x-1 mb-8 bg-dark-800 p-1 rounded-lg">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'videos', label: 'Video Management', icon: Video },
             { id: 'tokens', label: 'Token Management', icon: Coins },
             { id: 'features', label: 'Feature Control', icon: Settings },
             { id: 'analytics', label: 'Analytics', icon: Activity }
@@ -119,7 +160,7 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="bg-dark-800 rounded-lg p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -143,8 +184,18 @@ const AdminDashboard = () => {
               <div className="bg-dark-800 rounded-lg p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-400 text-sm">Total Views</p>
-                    <p className="text-2xl font-bold text-white">{mockAnalytics.totalViews.toLocaleString()}</p>
+                    <p className="text-gray-400 text-sm">Total Videos</p>
+                    <p className="text-2xl font-bold text-white">{videoStats?.total || 0}</p>
+                  </div>
+                  <Video className="w-8 h-8 text-red-500" />
+                </div>
+              </div>
+
+              <div className="bg-dark-800 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">Video Views</p>
+                    <p className="text-2xl font-bold text-white">{videoStats?.totalViews?.toLocaleString() || 0}</p>
                   </div>
                   <Eye className="w-8 h-8 text-purple-500" />
                 </div>
@@ -156,7 +207,53 @@ const AdminDashboard = () => {
                     <p className="text-gray-400 text-sm">Growth Rate</p>
                     <p className="text-2xl font-bold text-white">+{mockAnalytics.growthRate}%</p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-red-500" />
+                  <TrendingUp className="w-8 h-8 text-yellow-500" />
+                </div>
+              </div>
+            </div>
+
+            {/* Video Statistics */}
+            <div className="bg-dark-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Video Library Overview</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex items-center justify-between p-4 bg-dark-700 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <div>
+                      <p className="text-gray-300 text-sm">Ready</p>
+                      <p className="text-white font-medium">{videoStats?.ready || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-dark-700 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-6 h-6 text-yellow-500" />
+                    <div>
+                      <p className="text-gray-300 text-sm">Processing</p>
+                      <p className="text-white font-medium">{videoStats?.processing || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-dark-700 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Upload className="w-6 h-6 text-blue-500" />
+                    <div>
+                      <p className="text-gray-300 text-sm">Uploading</p>
+                      <p className="text-white font-medium">{videoStats?.uploading || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-dark-700 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <HardDrive className="w-6 h-6 text-gray-500" />
+                    <div>
+                      <p className="text-gray-300 text-sm">Storage Used</p>
+                      <p className="text-white font-medium">{formatFileSize(videoStats?.totalSize || 0)}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -183,6 +280,16 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Video Management Tab */}
+        {activeTab === 'videos' && (
+          <div className="space-y-6">
+            <VideoList 
+              onEditVideo={handleEditVideo}
+              onUploadClick={() => setShowUploadModal(true)}
+            />
           </div>
         )}
 
@@ -320,20 +427,32 @@ const AdminDashboard = () => {
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            <div className="bg-dark-800 rounded-lg p-6">
-              <h3 className="text-xl font-bold text-white mb-4">Platform Analytics</h3>
-              <div className="text-center py-12">
-                <BarChart3 className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">Analytics dashboard coming soon...</p>
-                <p className="text-gray-500 text-sm">Integration with analytics services in development</p>
-              </div>
-            </div>
+            <VideoAnalytics />
           </div>
         )}
       </div>
+
+      {/* Video Upload Modal */}
+      {showUploadModal && (
+        <VideoUpload
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={handleUploadSuccess}
+        />
+      )}
+
+      {/* Video Edit Modal */}
+      {showEditModal && selectedVideo && (
+        <VideoEditModal
+          video={selectedVideo}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedVideo(null);
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 };
 
 export default AdminDashboard;
-
