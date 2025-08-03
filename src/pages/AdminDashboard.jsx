@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { useVideoManagement } from '../hooks/useVideoManagement';
 import { ADMIN_CONFIG, FEATURE_FLAGS } from '../config/features';
+import VideoUploadForm from '../components/VideoUploadForm';
 import { 
   Crown, 
   Coins, 
@@ -15,17 +17,51 @@ import {
   DollarSign,
   TrendingUp,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Video,
+  Upload,
+  Edit,
+  Trash2,
+  Play,
+  Pause,
+  MoreVertical,
+  Search,
+  Filter,
+  RefreshCw
 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { getMintingInfo, getOwnerBalance, getTokenSupply, transferTokens } = useToken();
   const { isAdmin, toggleFeature, FEATURE_FLAGS: currentFlags } = useFeatureFlags();
+  const {
+    videos,
+    loading: videosLoading,
+    error: videosError,
+    pagination,
+    loadVideos,
+    createVideo,
+    uploadVideo,
+    updateVideo,
+    deleteVideo,
+    goToPage,
+    clearError
+  } = useVideoManagement();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [transferAmount, setTransferAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
   const [stealthMode, setStealthMode] = useState(FEATURE_FLAGS.STEALTH_MODE);
+  
+  // Video management state
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoFilters, setVideoFilters] = useState({
+    search: '',
+    category: '',
+    status: 'ready',
+  });
 
   // Redirect if not admin
   useEffect(() => {
@@ -71,6 +107,69 @@ const AdminDashboard = () => {
     alert(`Stealth mode ${newMode ? 'enabled' : 'disabled'}. Refresh the page to see changes.`);
   };
 
+  // Video management handlers
+  const handleVideoUpload = async ({ metadata, videoFile, thumbnailFile, onProgress }) => {
+    setIsUploading(true);
+    try {
+      // First create the video record
+      const newVideo = await createVideo(metadata);
+      
+      // Then upload the files
+      await uploadVideo(newVideo.id, videoFile, thumbnailFile, onProgress);
+      
+      setShowUploadForm(false);
+      alert('Video uploaded successfully!');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleVideoDelete = async (videoId, hardDelete = false) => {
+    if (!confirm(`Are you sure you want to ${hardDelete ? 'permanently delete' : 'delete'} this video?`)) {
+      return;
+    }
+
+    try {
+      await deleteVideo(videoId, hardDelete);
+      alert(`Video ${hardDelete ? 'permanently deleted' : 'deleted'} successfully!`);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(`Delete failed: ${error.message}`);
+    }
+  };
+
+  const handleVideoUpdate = async (videoId, updateData) => {
+    try {
+      await updateVideo(videoId, updateData);
+      alert('Video updated successfully!');
+    } catch (error) {
+      console.error('Update failed:', error);
+      alert(`Update failed: ${error.message}`);
+    }
+  };
+
+  const handleFilterChange = (filters) => {
+    setVideoFilters(prev => ({ ...prev, ...filters }));
+    loadVideos(filters);
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return 'Unknown';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
   const mockAnalytics = {
     totalUsers: 15420,
     activeUsers: 8930,
@@ -96,6 +195,7 @@ const AdminDashboard = () => {
         <div className="flex space-x-1 mb-8 bg-dark-800 p-1 rounded-lg">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'videos', label: 'Video Management', icon: Video },
             { id: 'tokens', label: 'Token Management', icon: Coins },
             { id: 'features', label: 'Feature Control', icon: Settings },
             { id: 'analytics', label: 'Analytics', icon: Activity }
@@ -183,6 +283,284 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Video Management Tab */}
+        {activeTab === 'videos' && (
+          <div className="space-y-6">
+            {showUploadForm ? (
+              <VideoUploadForm
+                onUpload={handleVideoUpload}
+                onCancel={() => setShowUploadForm(false)}
+                isUploading={isUploading}
+              />
+            ) : (
+              <>
+                {/* Video Management Header */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">Video Management</h3>
+                  <button
+                    onClick={() => setShowUploadForm(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Video</span>
+                  </button>
+                </div>
+
+                {/* Filters */}
+                <div className="bg-dark-800 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Search
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                          type="text"
+                          value={videoFilters.search}
+                          onChange={(e) => handleFilterChange({ search: e.target.value })}
+                          placeholder="Search videos..."
+                          className="w-full pl-10 pr-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={videoFilters.status}
+                        onChange={(e) => handleFilterChange({ status: e.target.value })}
+                        className="w-full px-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="ready">Ready</option>
+                        <option value="processing">Processing</option>
+                        <option value="uploading">Uploading</option>
+                        <option value="failed">Failed</option>
+                        <option value="deleted">Deleted</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Category
+                      </label>
+                      <select
+                        value={videoFilters.category}
+                        onChange={(e) => handleFilterChange({ category: e.target.value })}
+                        className="w-full px-4 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">All Categories</option>
+                        <option value="Combat Sports">Combat Sports</option>
+                        <option value="MMA">MMA</option>
+                        <option value="Boxing">Boxing</option>
+                        <option value="Wrestling">Wrestling</option>
+                        <option value="Martial Arts">Martial Arts</option>
+                        <option value="Training">Training</option>
+                        <option value="Highlights">Highlights</option>
+                        <option value="Tutorials">Tutorials</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => loadVideos(videoFilters)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Error Display */}
+                {videosError && (
+                  <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      <span className="text-red-400 font-medium">Error</span>
+                    </div>
+                    <p className="text-red-300 text-sm mt-1">{videosError}</p>
+                    <button
+                      onClick={clearError}
+                      className="text-red-400 hover:text-red-300 text-sm mt-2"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                {/* Videos List */}
+                <div className="bg-dark-800 rounded-lg overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-700">
+                    <h4 className="text-lg font-medium text-white">
+                      Videos ({pagination.total})
+                    </h4>
+                  </div>
+
+                  {videosLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+                      <span className="text-gray-400 ml-3">Loading videos...</span>
+                    </div>
+                  ) : videos.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Video className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                      <p className="text-gray-400">No videos found</p>
+                      <button
+                        onClick={() => setShowUploadForm(true)}
+                        className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        Upload Your First Video
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-700">
+                      {videos.map((video) => (
+                        <div key={video.id} className="px-6 py-4 hover:bg-dark-700 transition-colors">
+                          <div className="flex items-center space-x-4">
+                            {/* Thumbnail */}
+                            <div className="flex-shrink-0">
+                              {video.thumbnail_url ? (
+                                <img
+                                  src={video.thumbnail_url}
+                                  alt={video.title}
+                                  className="w-20 h-12 object-cover rounded"
+                                />
+                              ) : (
+                                <div className="w-20 h-12 bg-gray-600 rounded flex items-center justify-center">
+                                  <Video className="w-6 h-6 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Video Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <h5 className="text-white font-medium truncate">
+                                  {video.title}
+                                </h5>
+                                {video.is_featured && (
+                                  <span className="px-2 py-1 bg-yellow-600 text-yellow-100 text-xs rounded">
+                                    Featured
+                                  </span>
+                                )}
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  video.status === 'ready' ? 'bg-green-600 text-green-100' :
+                                  video.status === 'processing' ? 'bg-blue-600 text-blue-100' :
+                                  video.status === 'uploading' ? 'bg-yellow-600 text-yellow-100' :
+                                  video.status === 'failed' ? 'bg-red-600 text-red-100' :
+                                  'bg-gray-600 text-gray-100'
+                                }`}>
+                                  {video.status}
+                                </span>
+                              </div>
+                              <p className="text-gray-400 text-sm truncate mt-1">
+                                {video.description || 'No description'}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
+                                <span>Duration: {formatDuration(video.duration)}</span>
+                                <span>Size: {formatFileSize(video.file_size)}</span>
+                                <span>Views: {video.view_count || 0}</span>
+                                {video.category && <span>Category: {video.category}</span>}
+                              </div>
+                              {video.tags && video.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {video.tags.slice(0, 3).map(tag => (
+                                    <span key={tag} className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {video.tags.length > 3 && (
+                                    <span className="text-gray-500 text-xs">
+                                      +{video.tags.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center space-x-2">
+                              {video.video_url && (
+                                <a
+                                  href={video.video_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                                  title="View Video"
+                                >
+                                  <Play className="w-4 h-4" />
+                                </a>
+                              )}
+                              <button
+                                onClick={() => setSelectedVideo(video)}
+                                className="p-2 text-gray-400 hover:text-white transition-colors"
+                                title="Edit Video"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleVideoDelete(video.id, false)}
+                                className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                                title="Delete Video"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleVideoDelete(video.id, true)}
+                                className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                title="Permanently Delete"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pagination */}
+                  {pagination.totalPages > 1 && (
+                    <div className="px-6 py-4 border-t border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-400">
+                          Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                          {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                          {pagination.total} videos
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => goToPage(pagination.page - 1)}
+                            disabled={pagination.page === 1}
+                            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white rounded transition-colors"
+                          >
+                            Previous
+                          </button>
+                          <span className="px-3 py-1 bg-red-600 text-white rounded">
+                            {pagination.page}
+                          </span>
+                          <button
+                            onClick={() => goToPage(pagination.page + 1)}
+                            disabled={pagination.page === pagination.totalPages}
+                            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white rounded transition-colors"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -336,4 +714,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
