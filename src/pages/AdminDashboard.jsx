@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToken } from '../context/TokenContext';
 import { useVideo } from '../context/VideoContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { useVideoManagement } from '../hooks/useVideoManagement';
 import { ADMIN_CONFIG, FEATURE_FLAGS } from '../config/features';
 import VideoList from '../components/admin/VideoList';
 import VideoUpload from '../components/admin/VideoUpload';
@@ -39,6 +40,20 @@ const AdminDashboard = () => {
   const { getMintingInfo, getOwnerBalance, getTokenSupply, transferTokens } = useToken();
   const { videoStats, loading: videoLoading } = useVideo();
   const { isAdmin, toggleFeature, FEATURE_FLAGS: currentFlags } = useFeatureFlags();
+  const {
+    videos,
+    loading: videosLoading,
+    error: videosError,
+    pagination,
+    loadVideos,
+    createVideo,
+    uploadVideo,
+    updateVideo,
+    deleteVideo,
+    goToPage,
+    clearError
+  } = useVideoManagement();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [transferAmount, setTransferAmount] = useState('');
   const [transferAddress, setTransferAddress] = useState('');
@@ -93,6 +108,69 @@ const AdminDashboard = () => {
     alert(`Stealth mode ${newMode ? 'enabled' : 'disabled'}. Refresh the page to see changes.`);
   };
 
+  // Video management handlers
+  const handleVideoUpload = async ({ metadata, videoFile, thumbnailFile, onProgress }) => {
+    setIsUploading(true);
+    try {
+      // First create the video record
+      const newVideo = await createVideo(metadata);
+      
+      // Then upload the files
+      await uploadVideo(newVideo.id, videoFile, thumbnailFile, onProgress);
+      
+      setShowUploadForm(false);
+      alert('Video uploaded successfully!');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert(`Upload failed: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleVideoDelete = async (videoId, hardDelete = false) => {
+    if (!confirm(`Are you sure you want to ${hardDelete ? 'permanently delete' : 'delete'} this video?`)) {
+      return;
+    }
+
+    try {
+      await deleteVideo(videoId, hardDelete);
+      alert(`Video ${hardDelete ? 'permanently deleted' : 'deleted'} successfully!`);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(`Delete failed: ${error.message}`);
+    }
+  };
+
+  const handleVideoUpdate = async (videoId, updateData) => {
+    try {
+      await updateVideo(videoId, updateData);
+      alert('Video updated successfully!');
+    } catch (error) {
+      console.error('Update failed:', error);
+      alert(`Update failed: ${error.message}`);
+    }
+  };
+
+  const handleFilterChange = (filters) => {
+    setVideoFilters(prev => ({ ...prev, ...filters }));
+    loadVideos(filters);
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return 'Unknown';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
   const mockAnalytics = {
     totalUsers: 15420,
     activeUsers: 8930,
@@ -114,14 +192,6 @@ const AdminDashboard = () => {
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setSelectedVideo(null);
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
