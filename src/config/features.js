@@ -1,8 +1,9 @@
-// Feature flag configuration for stealth mode
-// Set REACT_APP_STEALTH_MODE=true to hide premium features
+// Feature flag configuration
+// All Web3 and wallet features are now disabled by default
 
 const isDevelopment = import.meta.env.DEV;
-const isStealthMode = import.meta.env.VITE_STEALTH_MODE === 'true';
+// Force stealth mode to be true to disable all Web3 features
+const isStealthMode = true;
 
 export const FEATURE_FLAGS = {
   // Core platform features
@@ -36,8 +37,7 @@ export const FEATURE_FLAGS = {
 export const ADMIN_CONFIG = {
   SECRET_ROUTE: '/admin-phyght-2024',
   ADMIN_EMAIL: 'mayurchougule1@gmail.com', // Owner email
-  TOKEN_SUPPLY: 1000000000, // 1 billion tokens
-  OWNER_WALLET: null, // Will be set when wallet connects
+  // Web3 features removed
 };
 
 // Combat video categories
@@ -55,4 +55,3 @@ export const COMBAT_CATEGORIES = [
 ];
 
 export default FEATURE_FLAGS;
-

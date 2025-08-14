@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, BarChart3, User } from 'lucide-react';
+import { Home, Search, BarChart3, User, Upload } from 'lucide-react';
 
 const MobileNav = () => {
   const location = useLocation();
@@ -8,6 +8,7 @@ const MobileNav = () => {
   const navigation = [
     { name: 'Home', href: '/', icon: Home, current: location.pathname === '/' },
     { name: 'Browse', href: '/browse', icon: Search, current: location.pathname === '/browse' },
+    { name: 'Upload', href: '/upload', icon: Upload, current: location.pathname === '/upload' },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3, current: location.pathname === '/dashboard' },
     { name: 'Profile', href: '/profile', icon: User, current: location.pathname === '/profile' },
   ];

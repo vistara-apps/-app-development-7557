@@ -49,10 +49,7 @@ const Home = () => {
           </h1>
           
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            {isFeatureEnabled('STEALTH_MODE') 
-              ? 'Watch the best combat sports content from MMA, Boxing, Kickboxing and more. Free access to premium fights and training content.'
-              : 'Join Phyght and access premium combat sports content while earning our proprietary cryptocurrency. Every interaction rewards you with Phyght tokens.'
-            }
+            Watch the best combat sports content from MMA, Boxing, Kickboxing and more. Free access to premium fights and training content.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
