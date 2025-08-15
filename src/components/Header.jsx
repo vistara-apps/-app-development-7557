@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useToken } from '../context/TokenContext';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
-import { User, Menu, X, Crown, Coins, Upload, Shield } from 'lucide-react';
+import { User, Menu, X, Upload, Shield } from 'lucide-react';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout, openAuthModal } = useAuth();
-  const { getTokenBalance } = useToken();
   const { isFeatureEnabled, isAdmin } = useFeatureFlags();
   const location = useLocation();
 
@@ -56,12 +54,6 @@ const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            {user && !isFeatureEnabled('STEALTH_MODE') && (
-              <div className="hidden sm:flex items-center space-x-2 bg-dark-900 px-3 py-1 rounded-full border border-dark-700">
-                <Coins className="w-4 h-4 text-secondary-500" />
-                <span className="text-sm font-medium text-white">{getTokenBalance()}</span>
-              </div>
-            )}
 
             {/* Admin Dashboard Access */}
             {isAdmin && (
@@ -86,12 +78,6 @@ const Header = () => {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {user.subscriptionStatus === 'premium' && !isFeatureEnabled('STEALTH_MODE') && (
-                    <div className="hidden sm:flex items-center space-x-1 bg-gradient-to-r from-secondary-500 to-secondary-600 px-2 py-1 rounded-sm">
-                      <Crown className="w-3 h-3" />
-                      <span className="text-xs font-medium text-white">Premium</span>
-                    </div>
-                  )}
                   
                   <div className="relative group">
                     <Link

@@ -171,6 +171,26 @@ const VideoPlayer = ({
         autoPlay={autoPlay}
         playsInline
         onClick={togglePlay}
+        onError={(e) => {
+          console.error('Video playback error:', e);
+          console.error('Video source:', src);
+          console.error('Video element:', videoRef.current);
+          console.error('Error details:', e.target.error);
+        }}
+        onLoadedMetadata={() => {
+          console.log('Video metadata loaded successfully');
+          console.log('Video duration:', videoRef.current?.duration);
+          console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+        }}
+        onLoadStart={() => {
+          console.log('Video load started');
+        }}
+        onCanPlay={() => {
+          console.log('Video can play');
+        }}
+        onCanPlayThrough={() => {
+          console.log('Video can play through');
+        }}
       />
 
       {/* Loading Overlay */}
@@ -179,6 +199,23 @@ const VideoPlayer = ({
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white">Loading video...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {src && !isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center bg-dark-800">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-white mb-2">Video playback error</p>
+            <p className="text-gray-400 text-sm">Source: {src}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded mt-2"
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}

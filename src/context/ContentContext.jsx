@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
-import { mockCombatVideos, featuredContent, trendingContent, freeContent, premiumContent } from '../data/mockContent';
-import { COMBAT_CATEGORIES } from '../config/features';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
-import { livepeerService } from '../services/livepeer';
+import videoManagementService from '../services/videoManagement';
 
 const ContentContext = createContext();
 
@@ -16,184 +13,315 @@ export const useContent = () => {
 };
 
 export const ContentProvider = ({ children }) => {
-  const { user } = useAuth();
-  const { isFeatureEnabled } = useFeatureFlags();
-  const [featuredContent, setFeaturedContent] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
+  const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState(null);
+  const { isFeatureEnabled } = useFeatureFlags();
 
+  // Debug environment variables
+  console.log('🔑 ContentContext: Environment variables check:');
+  console.log('🔑 ContentContext: VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+  console.log('🔑 ContentContext: VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? `${import.meta.env.VITE_SUPABASE_ANON_KEY.substring(0, 10)}...` : '❌ Missing');
+  console.log('🔑 ContentContext: All env vars:', import.meta.env);
+
+  // Test video management service
+  console.log('🧪 ContentContext: Testing video management service...');
+  try {
+    const testResult = videoManagementService.testService();
+    console.log('🧪 ContentContext: Service test result:', testResult);
+  } catch (error) {
+    console.error('❌ ContentContext: Service test failed:', error);
+  }
+
+  // Load content from database
   useEffect(() => {
-    // Load content from Livepeer
-    const loadContent = async () => {
-      setLoading(true);
+    console.log('🚀 ContentContext: useEffect triggered, calling loadContent...');
+    loadContent();
+  }, []);
+
+  // Listen for new video uploads
+  useEffect(() => {
+    const handleVideoAdded = (event) => {
+      const { video } = event.detail;
+      console.log('🎬 New video added to content context:', video);
+      console.log('📊 Current content count before adding:', content.length);
       
-      try {
-        // Try to load from Livepeer first, fallback to mock data
-        let availableContent = await livepeerService.getCombatVideos();
-        
-        // If Livepeer fails, use mock data
-        if (!availableContent || availableContent.length === 0) {
-          availableContent = mockCombatVideos;
-        }
-        
-        const stealthMode = isFeatureEnabled('STEALTH_MODE');
-        if (stealthMode) {
-          // In stealth mode, show all content as free
-          availableContent = availableContent.map(video => ({
-            ...video,
-            isPremium: false
-          }));
-        }
-        
-        setFeaturedContent(availableContent.slice(0, 6));
-        
-        if (user) {
-          // Generate personalized recommendations based on user preferences
-          const userRecommendations = availableContent.filter(content => 
-            user.subscriptionStatus === 'premium' || !content.isPremium
-          ).slice(6);
-          setRecommendations(userRecommendations);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading content:', error);
-        // Fallback to mock data
-        let availableContent = mockCombatVideos;
-        const stealthMode = isFeatureEnabled('STEALTH_MODE');
-        if (stealthMode) {
-          availableContent = availableContent.map(video => ({
-            ...video,
-            isPremium: false
-          }));
-        }
-        
-        setFeaturedContent(availableContent.slice(0, 6));
-        setLoading(false);
-      }
+      // Add the video to the content state
+      setContent(prevContent => {
+        const newContent = [...prevContent, video];
+        console.log('📊 Content updated, new count:', newContent.length);
+        return newContent;
+      });
     };
 
-    // Add a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-      }
-    }, 5000);
+    const handleThumbnailGenerated = (event) => {
+      const { videoId, thumbnailUrl } = event.detail;
+      console.log('🖼️ Thumbnail generated for video:', videoId, thumbnailUrl);
+      
+      // Update the video with new thumbnail
+      setContent(prevContent => 
+        prevContent.map(video => 
+          video.id === videoId 
+            ? { ...video, previewThumbnail: thumbnailUrl, thumbnail: thumbnailUrl }
+            : video
+        )
+      );
+    };
 
-    loadContent();
+    const handleVideoDurationFixed = (event) => {
+      const { videoId, duration } = event.detail;
+      console.log('⏱️ Duration fixed for video:', videoId, duration);
+      
+      // Update the video with new duration
+      setContent(prevContent => 
+        prevContent.map(video => 
+          video.id === videoId 
+            ? { ...video, duration }
+            : video
+        )
+      );
+    };
 
-    return () => clearTimeout(timeoutId);
-  }, [user]); // Simplified dependency array to prevent infinite re-renders
-
-  const searchContent = (query, filters = {}) => {
-    let content = mockCombatVideos;
+    window.addEventListener('videoAdded', handleVideoAdded);
+    window.addEventListener('thumbnailGenerated', handleThumbnailGenerated);
+    window.addEventListener('videoDurationFixed', handleVideoDurationFixed);
     
-    // Apply stealth mode filtering
-    if (isFeatureEnabled('STEALTH_MODE')) {
-      content = content.map(video => ({ ...video, isPremium: false }));
+    return () => {
+      window.removeEventListener('videoAdded', handleVideoAdded);
+      window.removeEventListener('thumbnailGenerated', handleThumbnailGenerated);
+      window.removeEventListener('videoDurationFixed', handleVideoDurationFixed);
+    };
+  }, []); // No dependencies to prevent infinite loops
+
+  const refreshContent = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Refreshing content from database...');
+      
+      // Refresh videos from the service
+      await videoManagementService.refreshVideos();
+      
+      // Get the updated videos
+      const updatedVideos = videoManagementService.getAllVideos();
+      setContent(updatedVideos);
+      
+      console.log('✅ Content refreshed, new count:', updatedVideos.length);
+      
+    } catch (error) {
+      console.error('❌ Error refreshing content:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    return content.filter(video => {
-      const matchesQuery = !query || 
-        video.title.toLowerCase().includes(query.toLowerCase()) ||
-        video.description.toLowerCase().includes(query.toLowerCase()) ||
-        video.fighters?.some(fighter => fighter.toLowerCase().includes(query.toLowerCase())) ||
-        video.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase()));
-      
-      const matchesCategory = !filters.category || filters.category === 'all' || video.category === filters.category;
-      const matchesType = !filters.type || video.type === filters.type;
-      const matchesPremium = filters.premium === undefined || video.isPremium === filters.premium;
-      const matchesOrganization = !filters.organization || video.organization === filters.organization;
-      
-      return matchesQuery && matchesCategory && matchesType && matchesPremium && matchesOrganization;
-    });
   };
 
-  const getContentById = (id) => {
-    let video = mockCombatVideos.find(content => content.id === id);
-    
-    // Apply stealth mode filtering
-    if (video && isFeatureEnabled('STEALTH_MODE')) {
-      video = { ...video, isPremium: false };
+  const loadContent = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('📚 ContentContext: Starting to load content...');
+      console.log('📚 ContentContext: Video management service:', videoManagementService);
+      
+      // Use the video management service to load videos
+      console.log('📚 ContentContext: Calling videoManagementService.loadVideos()...');
+      await videoManagementService.loadVideos();
+      
+      // Get the loaded videos from the service
+      const loadedVideos = videoManagementService.videos;
+      console.log('📚 ContentContext: Videos loaded from service:', loadedVideos);
+      console.log('📚 ContentContext: Video count:', loadedVideos.length);
+      
+      // If no videos loaded from database, show a fallback message
+      if (loadedVideos.length === 0) {
+        console.log('📚 ContentContext: No videos loaded, checking for fallback...');
+        // Check if there's an error in the service
+        if (videoManagementService.error) {
+          console.log('📚 ContentContext: Service has error:', videoManagementService.error);
+          setError(`Database error: ${videoManagementService.error}`);
+        } else {
+          console.log('📚 ContentContext: No videos in database, showing empty state');
+        }
+      }
+      
+      setContent(loadedVideos);
+      
+      console.log('✅ ContentContext: Content loaded successfully, state updated');
+      
+    } catch (error) {
+      console.error('❌ ContentContext: Error loading content:', error);
+      setError(error.message);
+      setContent([]);
+    } finally {
+      setLoading(false);
+      console.log('📚 ContentContext: Loading finished, loading state:', false);
     }
-    
-    return video;
   };
 
   const getContentByCategory = (category) => {
-    let content = mockCombatVideos.filter(video => 
-      category === 'all' || video.category === category
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => video.category === category);
+  };
+
+  const getContentByType = (type) => {
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => video.type === type);
+  };
+
+  const getContentByOrganization = (organization) => {
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => video.organization === organization);
+  };
+
+  const getContentByFighter = (fighterName) => {
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => 
+      video.fighters && video.fighters.some(fighter => 
+        fighter.toLowerCase().includes(fighterName.toLowerCase())
+      )
     );
+  };
+
+  const getContentById = (id) => {
+    if (!content || content.length === 0) return null;
     
-    // Apply stealth mode filtering
-    if (isFeatureEnabled('STEALTH_MODE')) {
-      content = content.map(video => ({ ...video, isPremium: false }));
-    }
+    return content.find(video => video.id === id);
+  };
+
+  const searchContent = (query) => {
+    if (!content || content.length === 0) return [];
     
-    return content;
+    const searchTerm = query.toLowerCase();
+    return content.filter(video =>
+      video.title?.toLowerCase().includes(searchTerm) ||
+      video.description?.toLowerCase().includes(searchTerm) ||
+      video.fighters?.some(fighter => fighter.toLowerCase().includes(searchTerm)) ||
+      video.organization?.toLowerCase().includes(searchTerm) ||
+      video.tags?.some(tag => tag.toLowerCase().includes(searchTerm))
+    );
+  };
+
+  const getFeaturedContent = () => {
+    if (!content || content.length === 0) return [];
+    
+    // Return featured content based on views, rating, featured flag, or recent uploads
+    return content.filter(video => 
+      video.featured || 
+      video.views > 1000 || 
+      (video.uploaded_at && new Date(video.uploaded_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)) // Last 24 hours
+    );
   };
 
   const getTrendingContent = () => {
-    let content = trendingContent;
+    if (!content || content.length === 0) return [];
     
-    // Apply stealth mode filtering
-    if (isFeatureEnabled('STEALTH_MODE')) {
-      content = content.map(video => ({ ...video, isPremium: false }));
-    }
-    
-    return content;
+    // Return trending content based on recent views, uploads, or recent activity
+    return content.filter(video => 
+      video.views > 500 || 
+      (video.uploaded_at && new Date(video.uploaded_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // Last 7 days
+    ).sort((a, b) => {
+      // Sort by views first, then by upload date
+      if (a.views !== b.views) {
+        return b.views - a.views;
+      }
+      // If views are equal, sort by upload date (newest first)
+      return new Date(b.uploaded_at || 0) - new Date(a.uploaded_at || 0);
+    });
   };
 
   const getFreeContent = () => {
-    return isFeatureEnabled('STEALTH_MODE') ? mockCombatVideos : freeContent;
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => !video.isPremium);
   };
 
   const getPremiumContent = () => {
-    return isFeatureEnabled('STEALTH_MODE') ? [] : premiumContent;
+    if (!content || content.length === 0) return [];
+    
+    return content.filter(video => video.isPremium);
   };
 
-  const getCategories = () => {
-    return COMBAT_CATEGORIES;
+  const getAvailableContent = () => {
+    if (!content || content.length === 0) return [];
+    
+    // Return content based on feature flags
+    return isFeatureEnabled('STEALTH_MODE') ? content : getFreeContent();
   };
 
   const getOrganizations = () => {
-    const orgs = [...new Set(mockCombatVideos.map(video => video.organization))];
-    return orgs.sort();
+    if (!content || content.length === 0) return [];
+    
+    const orgs = [...new Set(content.map(video => video.organization))];
+    return orgs.filter(org => org && org.trim() !== '');
   };
 
-  const getPopularFighters = () => {
-    const fighters = mockCombatVideos.flatMap(video => video.fighters || []);
-    const fighterCounts = fighters.reduce((acc, fighter) => {
-      acc[fighter] = (acc[fighter] || 0) + 1;
-      return acc;
-    }, {});
+  const getFighters = () => {
+    if (!content || content.length === 0) return [];
     
-    return Object.entries(fighterCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 20)
-      .map(([fighter]) => fighter);
+    const fighters = content.flatMap(video => video.fighters || []);
+    return [...new Set(fighters)].filter(fighter => fighter && fighter.trim() !== '');
+  };
+
+  const getCategories = () => {
+    if (!content || content.length === 0) return [];
+    
+    const categories = [...new Set(content.map(video => video.category))];
+    return categories.filter(cat => cat && cat.trim() !== '');
+  };
+
+  const addContent = (newContent) => {
+    setContent(prev => [...prev, newContent]);
+  };
+
+  const updateContent = (id, updates) => {
+    setContent(prev => prev.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
+  };
+
+  const removeContent = (id) => {
+    setContent(prev => prev.filter(item => item.id !== id));
+  };
+
+  const updateVideoThumbnail = (videoId, thumbnailUrl) => {
+    setContent(prev => 
+      prev.map(video => 
+        video.id === videoId 
+          ? { ...video, previewThumbnail: thumbnailUrl, thumbnail: thumbnailUrl }
+          : video
+      )
+    );
   };
 
   const value = {
-    featuredContent,
-    recommendations,
+    content,
     loading,
-    searchContent,
-    getContentById,
+    error,
+    loadContent,
+    refreshContent,
     getContentByCategory,
+    getContentByType,
+    getContentByOrganization,
+    getContentByFighter,
+    getContentById,
+    searchContent,
+    getFeaturedContent,
     getTrendingContent,
     getFreeContent,
     getPremiumContent,
-    getCategories,
+    getAvailableContent,
     getOrganizations,
-    getPopularFighters,
-    selectedCategory,
-    setSelectedCategory,
-    searchQuery,
-    setSearchQuery,
-    allContent: mockCombatVideos
+    getFighters,
+    getCategories,
+    addContent,
+    updateContent,
+    removeContent,
+    updateVideoThumbnail,
+    allContent: content
   };
 
   return (

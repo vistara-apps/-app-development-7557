@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY || 'demo-key',
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || 'demo-key',
   dangerouslyAllowBrowser: true // For demo purposes - in production, use backend
 });
 
@@ -35,7 +35,7 @@ const COMBAT_SPORTS_CONTEXT = {
 
 export class ModerationService {
   constructor() {
-    this.isDemo = !process.env.VITE_OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY === 'demo-key';
+    this.isDemo = !import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'demo-key';
   }
 
   /**

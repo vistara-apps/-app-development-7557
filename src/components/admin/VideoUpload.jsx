@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useVideo } from '../../context/VideoContext';
 import { 
   Upload, 
@@ -9,7 +9,8 @@ import {
   AlertCircle,
   CheckCircle,
   Plus,
-  Trash2
+  Trash2,
+  ChevronDown
 } from 'lucide-react';
 
 const VideoUpload = ({ onClose, onSuccess }) => {
@@ -21,20 +22,17 @@ const VideoUpload = ({ onClose, onSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'highlight',
     category: 'mma',
-    organization: '',
-    event: '',
-    weightClass: '',
-    fighters: [''],
-    tags: [''],
-    isPremium: false,
-    duration: ''
+    tags: []
   });
   const [errors, setErrors] = useState({});
+  const [showDetails, setShowDetails] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
   const videoTypes = [
     { value: 'full-fight', label: 'Full Fight' },
@@ -129,32 +127,53 @@ const VideoUpload = ({ onClose, onSuccess }) => {
     }
   };
 
-  const addFighter = () => {
-    setFormData(prev => ({
-      ...prev,
-      fighters: [...prev.fighters, '']
-    }));
-  };
+  // Listen for upload progress events
+  useEffect(() => {
+    const handleUploadProgress = (event) => {
+      const { progress, message } = event.detail;
+      setUploadProgress(progress);
+      setUploadStatus(message);
+      
+      if (progress === 100) {
+        // Upload complete, reset after a delay
+        setTimeout(() => {
+          setUploadProgress(0);
+          setUploadStatus('');
+        }, 3000);
+      }
+    };
 
-  const removeFighter = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      fighters: prev.fighters.filter((_, i) => i !== index)
-    }));
-  };
+    const handleUploadComplete = (event) => {
+      console.log('✅ Upload completed:', event.detail);
+      setUploadProgress(100);
+      setUploadStatus('Upload complete!');
+    };
 
-  const updateFighter = (index, value) => {
-    setFormData(prev => ({
-      ...prev,
-      fighters: prev.fighters.map((fighter, i) => i === index ? value : fighter)
-    }));
-  };
+    const handleUploadError = (event) => {
+      console.error('❌ Upload error:', event.detail);
+      setUploadProgress(0);
+      setUploadStatus(`Upload failed: ${event.detail.error}`);
+    };
+
+    window.addEventListener('uploadProgress', handleUploadProgress);
+    window.addEventListener('uploadComplete', handleUploadComplete);
+    window.addEventListener('uploadError', handleUploadError);
+
+    return () => {
+      window.removeEventListener('uploadProgress', handleUploadProgress);
+      window.removeEventListener('uploadComplete', handleUploadComplete);
+      window.removeEventListener('uploadError', handleUploadError);
+    };
+  }, []);
 
   const addTag = () => {
-    setFormData(prev => ({
-      ...prev,
-      tags: [...prev.tags, '']
-    }));
+    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tagInput.trim()]
+      }));
+      setTagInput('');
+    }
   };
 
   const removeTag = (index) => {
@@ -175,19 +194,19 @@ const VideoUpload = ({ onClose, onSuccess }) => {
     const newErrors = {};
 
     if (!selectedFile) {
-      newErrors.file = 'Please select a video file';
-    }
+      newErrors.file = 'Video file is required';
+    } else {
+      // Validate file type
+      const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        newErrors.file = 'Please select a valid video file (MP4, AVI, MOV, WMV, WebM)';
+      }
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    if (formData.fighters.filter(f => f.trim()).length === 0) {
-      newErrors.fighters = 'At least one fighter is required';
+      // Validate file size (max 50MB for Supabase)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (selectedFile.size > maxSize) {
+        newErrors.file = 'File size must be less than 50MB';
+      }
     }
 
     setErrors(newErrors);
@@ -278,7 +297,7 @@ const VideoUpload = ({ onClose, onSuccess }) => {
                   </button>
                 </p>
                 <p className="text-gray-500 text-sm">
-                  Supports MP4, AVI, MOV, WMV, WebM (max 2GB)
+                  Supports MP4, AVI, MOV, WMV, WebM (max 50MB)
                 </p>
                 <input
                   ref={fileInputRef}
@@ -315,254 +334,122 @@ const VideoUpload = ({ onClose, onSuccess }) => {
             )}
           </div>
 
-          {/* Thumbnail Upload */}
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-gray-300">Custom Thumbnail (Optional)</label>
-            
-            {!thumbnailFile ? (
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
-                <Image className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-400 text-sm mb-2">
-                  <button
-                    type="button"
-                    onClick={() => thumbnailInputRef.current?.click()}
-                    className="text-red-500 hover:text-red-400 underline"
-                  >
-                    Upload thumbnail
-                  </button>
-                  {' '}or use auto-generated
-                </p>
-                <input
-                  ref={thumbnailInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => e.target.files[0] && handleThumbnailSelect(e.target.files[0])}
-                  className="hidden"
-                />
+          {/* Upload Progress */}
+          {uploadProgress > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-300">Upload Progress</span>
+                <span className="text-sm text-gray-400">{uploadProgress}%</span>
               </div>
-            ) : (
-              <div className="bg-dark-700 rounded-lg p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={URL.createObjectURL(thumbnailFile)}
-                    alt="Thumbnail preview"
-                    className="w-16 h-10 object-cover rounded"
+              
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-red-500 h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+              
+              {uploadStatus && (
+                <p className="text-sm text-gray-400 text-center">{uploadStatus}</p>
+              )}
+            </div>
+          )}
+
+          {/* Optional Video Details (Collapsible) */}
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowDetails(!showDetails)}
+              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <span className="text-sm font-medium">
+                {showDetails ? 'Hide' : 'Add'} Video Details (Optional)
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showDetails && (
+              <div className="space-y-4 pl-4 border-l border-gray-600">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    placeholder="Enter video title (optional)"
+                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
                   />
-                  <div>
-                    <p className="text-white font-medium">{thumbnailFile.name}</p>
-                    <p className="text-gray-400 text-sm">{formatFileSize(thumbnailFile.size)}</p>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Enter video description (optional)"
+                    rows={3}
+                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => handleInputChange('category', e.target.value)}
+                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500"
+                  >
+                    {categories.map(category => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-600 text-white"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(index)}
+                          className="ml-1 hover:text-red-200"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                      placeholder="Add tag and press Enter"
+                      className="flex-1 px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTag}
+                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setThumbnailFile(null)}
-                  className="text-gray-400 hover:text-red-400 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             )}
-            
-            {errors.thumbnail && (
-              <p className="text-red-400 text-sm flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.thumbnail}
-              </p>
-            )}
-          </div>
-
-          {/* Video Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Title */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                placeholder="Enter video title"
-              />
-              {errors.title && (
-                <p className="text-red-400 text-sm mt-1 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.title}
-                </p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                placeholder="Enter video description"
-              />
-              {errors.description && (
-                <p className="text-red-400 text-sm mt-1 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.description}
-                </p>
-              )}
-            </div>
-
-            {/* Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
-              <select
-                value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-              >
-                {videoTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-              >
-                {categories.map(category => (
-                  <option key={category.value} value={category.value}>{category.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Organization */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Organization</label>
-              <input
-                type="text"
-                value={formData.organization}
-                onChange={(e) => handleInputChange('organization', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                placeholder="e.g., UFC, Bellator, ONE"
-              />
-            </div>
-
-            {/* Event */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Event</label>
-              <input
-                type="text"
-                value={formData.event}
-                onChange={(e) => handleInputChange('event', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                placeholder="e.g., UFC 300, Bellator 290"
-              />
-            </div>
-
-            {/* Weight Class */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Weight Class</label>
-              <select
-                value={formData.weightClass}
-                onChange={(e) => handleInputChange('weightClass', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-              >
-                <option value="">Select weight class</option>
-                {weightClasses.map(weightClass => (
-                  <option key={weightClass} value={weightClass}>{weightClass}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Duration */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
-              <input
-                type="text"
-                value={formData.duration}
-                onChange={(e) => handleInputChange('duration', e.target.value)}
-                className="w-full bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                placeholder="e.g., 15:32, 1:23:45"
-              />
-            </div>
-          </div>
-
-          {/* Fighters */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Fighters *</label>
-            <div className="space-y-2">
-              {formData.fighters.map((fighter, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={fighter}
-                    onChange={(e) => updateFighter(index, e.target.value)}
-                    className="flex-1 bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                    placeholder={`Fighter ${index + 1}`}
-                  />
-                  {formData.fighters.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeFighter(index)}
-                      className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addFighter}
-                className="flex items-center space-x-2 text-red-500 hover:text-red-400 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Fighter</span>
-              </button>
-            </div>
-            {errors.fighters && (
-              <p className="text-red-400 text-sm mt-1 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.fighters}
-              </p>
-            )}
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
-            <div className="space-y-2">
-              {formData.tags.map((tag, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={tag}
-                    onChange={(e) => updateTag(index, e.target.value)}
-                    className="flex-1 bg-dark-700 text-white rounded-lg border border-gray-600 px-3 py-2 focus:border-red-500 focus:outline-none"
-                    placeholder={`Tag ${index + 1}`}
-                  />
-                  {formData.tags.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeTag(index)}
-                      className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addTag}
-                className="flex items-center space-x-2 text-red-500 hover:text-red-400 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Tag</span>
-              </button>
-            </div>
           </div>
 
           {/* Premium Toggle */}
@@ -590,33 +477,40 @@ const VideoUpload = ({ onClose, onSuccess }) => {
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 text-gray-300 hover:text-white transition-colors"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={uploading || !selectedFile}
-              className="flex items-center space-x-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Video</span>
-                </>
-              )}
-            </button>
-          </div>
+            {/* Submit Button */}
+            <div className="flex space-x-4 pt-6">
+              <button
+                type="submit"
+                disabled={uploading || uploadProgress > 0}
+                className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
+                  uploading || uploadProgress > 0
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                {uploading || uploadProgress > 0 ? (
+                  <span className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Processing...'}
+                  </span>
+                ) : (
+                  'Upload Video Instantly'
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={uploading || uploadProgress > 0}
+                className={`py-3 px-6 rounded-lg font-medium transition-colors ${
+                  uploading || uploadProgress > 0
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-600 hover:bg-gray-700 text-white'
+                }`}
+              >
+                Cancel
+              </button>
+            </div>
         </form>
       </div>
     </div>

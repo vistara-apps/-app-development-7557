@@ -1,62 +1,83 @@
-import React from 'react';
-import { Play, Clock, Lock, Crown, Eye, Users, Trophy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Clock, Eye, Image, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useToken } from '../context/TokenContext';
 import { useVideo } from '../context/VideoContext';
-import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import videoAnalysisService from '../services/videoAnalysis';
 
-const ContentCard = ({ content }) => {
+const ContentCard = ({ content, updateThumbnail }) => {
   const { user, openAuthModal } = useAuth();
-  const { spendTokens } = useToken();
   const { openVideoModal } = useVideo();
-  const { isFeatureEnabled } = useFeatureFlags();
+  const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   const handleWatch = () => {
-    if (!user) {
-      openAuthModal('login');
-      return;
-    }
-
-    // In stealth mode, all content is free
-    if (isFeatureEnabled('STEALTH_MODE')) {
-      openVideoModal(content);
-      return;
-    }
-
-    if (content.isPremium && user.subscriptionStatus !== 'premium') {
-      // Try to unlock with tokens or show subscription modal
-      if (user.phyghtTokenBalance >= 20) {
-        if (confirm(`Unlock this premium fight for 20 Phyght tokens?`)) {
-          if (spendTokens(20, `Unlocked: ${content.title}`)) {
-            openVideoModal(content);
-          }
-        }
-      } else {
-        window.openSubscriptionModal?.();
-      }
-      return;
-    }
-
     openVideoModal(content);
   };
 
   const canWatch = () => {
-    if (isFeatureEnabled('STEALTH_MODE')) return true;
-    if (!content.isPremium) return true;
-    if (user?.subscriptionStatus === 'premium') return true;
-    if (user?.phyghtTokenBalance >= 20) return true;
-    return false;
+    return true; // All content is free to watch
+  };
+
+  const handleThumbnailError = () => {
+    setThumbnailError(true);
+  };
+
+  const generateThumbnail = async () => {
+    if (!content.contentFile && !content.content_file) {
+      console.error('No video file available for thumbnail generation');
+      return;
+    }
+
+    setGeneratingThumbnail(true);
+    try {
+      // For now, we'll use a random image as placeholder
+      // In production, you'd call your thumbnail generation API
+      const newThumbnail = `https://picsum.photos/320/180?random=${content.id}-${Date.now()}`;
+      
+      // Update the content with new thumbnail
+      if (updateThumbnail) {
+        updateThumbnail(content.id, newThumbnail);
+      }
+      
+      setThumbnailError(false);
+    } catch (error) {
+      console.error('Failed to generate thumbnail:', error);
+    } finally {
+      setGeneratingThumbnail(false);
+    }
   };
 
   return (
     <div className="bg-dark-850 rounded-lg overflow-hidden card-hover group border border-dark-700">
       <div className="relative aspect-video">
-        <img
-          src={content.previewThumbnail}
-          alt={content.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        {thumbnailError ? (
+          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+            <div className="text-center">
+              <Image className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-400 text-sm mb-2">Thumbnail failed to load</p>
+              <button
+                onClick={generateThumbnail}
+                disabled={generatingThumbnail}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs flex items-center mx-auto"
+              >
+                {generatingThumbnail ? (
+                  <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <Image className="w-3 h-3 mr-1" />
+                )}
+                Generate Thumbnail
+              </button>
+            </div>
+          </div>
+        ) : (
+          <img
+            src={content.previewThumbnail}
+            alt={content.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={handleThumbnailError}
+          />
+        )}
         
         <div className="absolute inset-0 video-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           <button
@@ -67,22 +88,6 @@ const ContentCard = ({ content }) => {
           </button>
         </div>
 
-        {/* Premium badge - hidden in stealth mode */}
-        {content.isPremium && !isFeatureEnabled('STEALTH_MODE') && (
-          <div className="absolute top-2 left-2">
-            {user?.subscriptionStatus === 'premium' ? (
-              <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-2 py-1 rounded-sm flex items-center space-x-1">
-                <Crown className="w-3 h-3" />
-                <span className="text-xs font-medium text-white">Premium</span>
-              </div>
-            ) : (
-              <div className="bg-dark-900 bg-opacity-90 px-2 py-1 rounded-sm flex items-center space-x-1 border border-secondary-500/30">
-                <Lock className="w-3 h-3 text-secondary-500" />
-                <span className="text-xs font-medium text-secondary-500">Premium</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Combat category badge */}
         <div className="absolute top-2 right-2">
@@ -138,18 +143,9 @@ const ContentCard = ({ content }) => {
         {/* Action button */}
         <button
           onClick={handleWatch}
-          disabled={!canWatch() && !user}
-          className={`w-full mt-3 py-2 px-4 rounded-sm text-sm font-medium transition-all duration-200 ${
-            canWatch() || !user
-              ? 'ph-button'
-              : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-          }`}
+          className="w-full mt-3 py-2 px-4 rounded-sm text-sm font-medium transition-all duration-200 ph-button"
         >
-          {!user ? 'Login to Watch' : 
-           isFeatureEnabled('STEALTH_MODE') ? 'Watch Fight' :
-           content.isPremium && user.subscriptionStatus !== 'premium' 
-             ? user.phyghtTokenBalance >= 20 ? 'Unlock (20 tokens)' : 'Upgrade to Premium'
-             : 'Watch Fight'}
+          Watch Fight
         </button>
       </div>
     </div>
