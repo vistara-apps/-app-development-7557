@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import Upload from './pages/Upload';
 import AdminDashboard from './pages/AdminDashboard';
 import MobileNav from './components/MobileNav';
 import AuthModal from './components/AuthModal';
@@ -41,6 +42,7 @@ function AppContent() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/upload" element={<Upload />} />
             <Route path="/admin-phyght-2024" element={<AdminDashboard />} />
           </Routes>
         </main>

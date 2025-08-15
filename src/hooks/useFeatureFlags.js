@@ -14,7 +14,16 @@ export const useFeatureFlags = () => {
   }, [user]);
 
   const isFeatureEnabled = (featureName) => {
-    // Admin can see all features
+    // Force Web3 features to be disabled
+    if (featureName === 'SHOW_TOKEN_BALANCE' || 
+        featureName === 'SHOW_TOKEN_EARNINGS' ||
+        featureName === 'ENABLE_TOKEN_MINTING' ||
+        featureName.includes('WEB3') ||
+        featureName.includes('WALLET')) {
+      return false;
+    }
+    
+    // Admin can see all other features
     if (isAdmin && featureName.startsWith('SHOW_')) {
       return true;
     }
@@ -48,4 +57,3 @@ export const useFeatureFlags = () => {
 };
 
 export default useFeatureFlags;
-

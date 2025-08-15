@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import { useAuth } from '../context/AuthContext';
-import { useToken } from '../context/TokenContext';
-import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 const VideoModal = ({ isOpen, onClose, content }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const { user } = useAuth();
-  const { earnTokens } = useToken();
-  const { isFeatureEnabled } = useFeatureFlags();
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -63,11 +59,6 @@ const VideoModal = ({ isOpen, onClose, content }) => {
             }}
             onEnded={() => {
               console.log('Video ended');
-              // Earn tokens for watching (only if not in stealth mode)
-              if (user && !isFeatureEnabled('STEALTH_MODE')) {
-                const tokenAmount = user.subscriptionStatus === 'premium' ? 10 : 5;
-                earnTokens(tokenAmount, `Watched: ${content.title}`);
-              }
             }}
           />
         </div>

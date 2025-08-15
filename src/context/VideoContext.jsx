@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { videoManagementService } from '../services/videoManagement';
+import { useAuth } from './AuthContext';
 
 const VideoContext = createContext();
 
@@ -12,6 +13,7 @@ export const useVideo = () => {
 };
 
 export const VideoProvider = ({ children }) => {
+  const { getCurrentUserId } = useAuth();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [currentVideo, setCurrentVideo] = useState(null);
   
@@ -66,7 +68,13 @@ export const VideoProvider = ({ children }) => {
 
   const addVideo = async (videoData, file) => {
     try {
-      const newVideo = await videoManagementService.addVideo(videoData, file);
+      // Add user identifier (anonymous or logged in)
+      const enhancedVideoData = {
+        ...videoData,
+        uploadedBy: videoData.uploadedBy || getCurrentUserId() || 'anonymous'
+      };
+      
+      const newVideo = await videoManagementService.addVideo(enhancedVideoData, file);
       await loadAdminVideos(); // Refresh the list
       return newVideo;
     } catch (error) {

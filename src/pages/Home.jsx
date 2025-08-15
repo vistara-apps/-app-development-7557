@@ -1,245 +1,313 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useContent } from '../context/ContentContext';
-import { useToken } from '../context/TokenContext';
-import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { useAuth } from '../context/AuthContext';
+import { Play, Clock, Eye, Star, TrendingUp, Crown } from 'lucide-react';
 import ContentCard from '../components/ContentCard';
-import CategorySection from '../components/CategorySection';
-import { Crown, Coins, TrendingUp, Play, ArrowRight, Star, Zap, Users, Trophy } from 'lucide-react';
 
 const Home = () => {
-  const { user, openAuthModal } = useAuth();
-  const { featuredContent, recommendations, loading, getTrendingContent } = useContent();
-  const { dailyEarnings, earnTokens } = useToken();
-  const { isFeatureEnabled } = useFeatureFlags();
+  const { 
+    getFeaturedContent, 
+    getTrendingContent, 
+    content, // Add this to get all content
+    loading, 
+    error,
+    refreshContent, // Add this
+    updateVideoThumbnail // Add this
+  } = useContent();
+  
+  const { user } = useAuth();
 
+  // Get content from database
+  const featuredContent = getFeaturedContent();
+  const trendingContent = getTrendingContent();
 
-
-
-
-  const handleGetStarted = () => {
-    if (user && !isFeatureEnabled('STEALTH_MODE')) {
-      window.openSubscriptionModal?.();
-    } else {
-      openAuthModal('register');
-    }
-  };
+  // Debug logging
+  console.log('🏠 Home page - Featured content:', featuredContent);
+  console.log('🏠 Home page - Trending content:', trendingContent);
+  console.log('🏠 Home page - All content:', content);
+  console.log('🏠 Home page - Total content count:', content.length);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 loading-spinner mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading amazing content...</p>
-          <p className="text-gray-500 text-sm mt-2">Please wait while we prepare your content</p>
+      <div className="min-h-screen bg-dark-900 text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading content...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-dark-900 text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="bg-red-600 text-white p-4 rounded-lg mb-4">
+              <p className="text-lg font-semibold">Error Loading Content</p>
+              <p className="text-sm">{error}</p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-dark-950">
-      {/* Hero Section - Pornhub style */}
-      <section className="relative bg-gradient-to-r from-dark-900 via-dark-850 to-dark-900 py-16 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            The Ultimate Combat
-            <span className="block gradient-text">Video Platform</span>
+    <div className="min-h-screen bg-dark-900 text-white">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-r from-red-900 to-red-700 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            Welcome to <span className="text-yellow-400">Phyght TV</span>
           </h1>
-          
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            {isFeatureEnabled('STEALTH_MODE') 
-              ? 'Watch the best combat sports content from MMA, Boxing, Kickboxing and more. Free access to premium fights and training content.'
-              : 'Join Phyght and access premium combat sports content while earning our proprietary cryptocurrency. Every interaction rewards you with Phyght tokens.'
-            }
+          <p className="text-xl md:text-2xl mb-8 text-gray-200">
+            The Ultimate Combat Sports Streaming Platform
           </p>
-
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/browse"
-              className="ph-button px-8 py-4 text-lg flex items-center justify-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
             >
-              <Play className="w-5 h-5 mr-2" />
-              Watch Fights Now
+              Start Watching
             </Link>
-
             {!user && (
-              <button
-                onClick={() => openAuthModal('register')}
-                className="border-2 border-primary-500 hover:bg-primary-500 text-primary-500 hover:text-white px-8 py-4 rounded-sm font-medium transition-colors flex items-center justify-center"
+              <Link
+                to="/auth"
+                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-red-900 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
               >
-                <Users className="w-5 h-5 mr-2" />
-                Join Free
-              </button>
+                Sign Up Free
+              </Link>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Featured Content */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold flex items-center">
+              <Crown className="w-8 h-8 text-yellow-400 mr-3" />
+              Featured Content
+            </h2>
+            <Link
+              to="/browse"
+              className="text-red-400 hover:text-red-300 transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+          
+          {featuredContent.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredContent.map((content) => (
+                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Play className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl">No featured content yet</p>
+                <p className="text-sm">Upload your first video to get started!</p>
+              </div>
+              {user && (
+                <Link
+                  to="/upload"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
+                >
+                  Upload Video
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Trending Content */}
+      <section className="py-16 bg-dark-800">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold flex items-center">
+              <TrendingUp className="w-8 h-8 text-red-400 mr-3" />
+              Trending Now
+            </h2>
+            <Link
+              to="/browse"
+              className="text-red-400 hover:text-red-300 transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+          
+          {trendingContent.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {trendingContent.map((content) => (
+                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <TrendingUp className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl">No trending content yet</p>
+                <p className="text-sm">Content will appear here as it gains popularity</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* All Videos Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold flex items-center">
+              <Play className="w-8 h-8 text-blue-400 mr-3" />
+              All Videos
+            </h2>
+            <Link
+              to="/browse"
+              className="text-red-400 hover:text-red-300 transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+          
+          {content.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {content.map((content) => (
+                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Play className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl">No videos uploaded yet</p>
+                <p className="text-sm">Be the first to upload a video!</p>
+              </div>
+              {user && (
+                <Link
+                  to="/upload"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
+                >
+                  Upload First Video
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 px-4 bg-dark-900">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-500 mb-2">1,200+</div>
-              <div className="text-gray-300">Fight Videos</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-500 mb-2">150K+</div>
-              <div className="text-gray-300">Combat Fans</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-500 mb-2">25+</div>
-              <div className="text-gray-300">Organizations</div>
-            </div>
-
-            {!isFeatureEnabled('STEALTH_MODE') && (
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-500 mb-2">5M+</div>
-                <div className="text-gray-300">Tokens Earned</div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* User Dashboard Widget */}
-      {user && (
-        <section className="py-8 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-gradient-to-r from-primary-900/30 to-primary-800/30 rounded-lg p-6 border border-primary-800/20">
-              <h2 className="text-xl font-bold text-white mb-4">Welcome back, {user.username}!</h2>
-              
-              <div className={`grid grid-cols-1 ${isFeatureEnabled('STEALTH_MODE') ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
-                {!isFeatureEnabled('STEALTH_MODE') && (
-                  <>
-                    <div className="bg-dark-850 rounded-lg p-4 border border-dark-700">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-400 text-sm">Token Balance</p>
-                          <p className="text-2xl font-bold text-white">{user.phyghtTokenBalance}</p>
-                        </div>
-                        <Coins className="w-8 h-8 text-secondary-500" />
-                      </div>
-                    </div>
-                    
-                    <div className="bg-dark-850 rounded-lg p-4 border border-dark-700">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-400 text-sm">Today's Earnings</p>
-                          <p className="text-2xl font-bold text-green-500">+{dailyEarnings}</p>
-                        </div>
-                        <TrendingUp className="w-8 h-8 text-green-500" />
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                <div className="bg-dark-850 rounded-lg p-4 border border-dark-700">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">Videos Watched</p>
-                      <p className="text-2xl font-bold text-white">47</p>
-                    </div>
-                    <Play className="w-8 h-8 text-primary-500" />
-                  </div>
-                </div>
-
-                <div className="bg-dark-850 rounded-lg p-4 border border-dark-700">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">
-                        {isFeatureEnabled('STEALTH_MODE') ? 'Account Status' : 'Membership'}
-                      </p>
-                      <p className="text-2xl font-bold text-white capitalize">
-                        {isFeatureEnabled('STEALTH_MODE') ? 'Active' : user.subscriptionStatus}
-                      </p>
-                    </div>
-                    {isFeatureEnabled('STEALTH_MODE') ? (
-                      <Trophy className="w-8 h-8 text-primary-500" />
-                    ) : user.subscriptionStatus === 'premium' ? (
-                      <Crown className="w-8 h-8 text-secondary-500" />
-                    ) : (
-                      <Star className="w-8 h-8 text-gray-500" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Category Section */}
-      <CategorySection />
-
-      {/* Featured Content */}
-      <section className="py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-white">Featured Fights</h2>
-            <Link
-              to="/browse"
-              className="text-primary-500 hover:text-primary-400 flex items-center font-medium"
-            >
-              View All
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredContent.map((content) => (
-              <ContentCard
-                key={content.id}
-                content={content}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Personalized Recommendations */}
-      {user && recommendations.length > 0 && (
-        <section className="py-12 px-4 bg-dark-900">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-8">Recommended Fights</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {recommendations.map((content) => (
-              <ContentCard
-                key={content.id}
-                content={content}
-              />
-            ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-              {/* CTA Section */}
-        {!user && (
-          <section className="py-16 px-4 bg-gradient-to-r from-primary-900/30 to-primary-800/30">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-3xl font-bold text-white mb-6">
-                Join the Combat Community
-              </h2>
-              
-              <p className="text-xl text-gray-300 mb-8">
-                Join thousands of combat sports fans watching the best fights from around the world.
-              </p>
-
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Platform Statistics</h2>
+            <div className="flex gap-2">
               <button
-                onClick={() => openAuthModal('register')}
-                className="ph-button px-8 py-4 text-lg"
+                onClick={() => {
+                  console.log('🧪 Home: Manual loadContent test...');
+                  refreshContent();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                Create Free Account
+                🧪 Test Load
+              </button>
+              <button
+                onClick={async () => {
+                  console.log('🎬 Home: Generating thumbnails for all videos...');
+                  try {
+                    const { batchGenerateThumbnails } = await import('../services/videoAnalysis');
+                    await batchGenerateThumbnails(content);
+                    console.log('✅ Thumbnails generated for all videos');
+                  } catch (error) {
+                    console.error('❌ Failed to generate thumbnails:', error);
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                🎬 Generate Thumbnails
+              </button>
+              <button
+                onClick={async () => {
+                  console.log('⏱️ Home: Fixing video durations...');
+                  try {
+                    const { videoManagementService } = await import('../services/videoManagement');
+                    await videoManagementService.fixVideoDurations();
+                    console.log('✅ Video durations fixed');
+                  } catch (error) {
+                    console.error('❌ Failed to fix video durations:', error);
+                  }
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                ⏱️ Fix Durations
+              </button>
+              <button
+                onClick={async () => {
+                  console.log('🧪 Home: Testing video URLs...');
+                  try {
+                    const { videoManagementService } = await import('../services/videoManagement');
+                    await videoManagementService.testVideoUrls();
+                    console.log('✅ Video URL testing complete');
+                  } catch (error) {
+                    console.error('❌ Failed to test video URLs:', error);
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                🧪 Test URLs
+              </button>
+              <button
+                onClick={refreshContent}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                {loading ? 'Refreshing...' : '🔄 Refresh Content'}
               </button>
             </div>
-          </section>
-        )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            <div className="bg-dark-800 p-6 rounded-lg">
+              <div className="text-3xl font-bold text-red-400 mb-2">
+                {content.length}
+              </div>
+              <div className="text-gray-400">Videos Available</div>
+            </div>
+            <div className="bg-dark-800 p-6 rounded-lg">
+              <div className="text-3xl font-bold text-blue-400 mb-2">
+                {featuredContent.length}
+              </div>
+              <div className="text-gray-400">Featured Videos</div>
+            </div>
+            <div className="bg-dark-800 p-6 rounded-lg">
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {trendingContent.length}
+              </div>
+              <div className="text-gray-400">Trending Now</div>
+            </div>
+            <div className="bg-dark-800 p-6 rounded-lg">
+              <div className="text-3xl font-bold text-yellow-400 mb-2">
+                {user ? 'Active' : 'Free'}
+              </div>
+              <div className="text-gray-400">Your Status</div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
   const [loading, setLoading] = useState(true);
+  const [anonymousId, setAnonymousId] = useState(null);
 
   // Mock user data for demo
   const mockUser = {
@@ -36,6 +37,14 @@ export const AuthProvider = ({ children }) => {
         if (savedUser) {
           setUser(JSON.parse(savedUser));
         }
+        
+        // Generate or retrieve anonymous ID
+        let anonId = localStorage.getItem('phyght_anonymous_id');
+        if (!anonId) {
+          anonId = `anon-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+          localStorage.setItem('phyght_anonymous_id', anonId);
+        }
+        setAnonymousId(anonId);
       } catch (error) {
         console.error('Error loading user data:', error);
       } finally {
@@ -99,6 +108,16 @@ export const AuthProvider = ({ children }) => {
     setIsAuthModalOpen(false);
   };
 
+  // Check if user is authenticated (either logged in or anonymous)
+  const isAuthenticated = () => {
+    return !!user || !!anonymousId;
+  };
+
+  // Get current user ID (either logged in user ID or anonymous ID)
+  const getCurrentUserId = () => {
+    return user ? user.id : anonymousId;
+  };
+
   const value = {
     user,
     loading,
@@ -110,7 +129,10 @@ export const AuthProvider = ({ children }) => {
     updateSubscription,
     openAuthModal,
     closeAuthModal,
-    setAuthMode
+    setAuthMode,
+    anonymousId,
+    isAuthenticated,
+    getCurrentUserId
   };
 
   return (
