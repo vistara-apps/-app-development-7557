@@ -13,6 +13,17 @@ class VideoAnalysisService {
       // Cheap video analysis using various APIs
       analysis: 'ffmpeg-wasm' // Free, runs in browser
     };
+
+    // Bind methods to ensure proper 'this' context
+    this.analyzeVideo = this.analyzeVideo.bind(this);
+    this.generateThumbnail = this.generateThumbnail.bind(this);
+    this._fallbackVideoAnalysis = this._fallbackVideoAnalysis.bind(this);
+    this._analyzeVideoFromUrl = this._analyzeVideoFromUrl.bind(this);
+    this._generateThumbnailFromUrl = this._generateThumbnailFromUrl.bind(this);
+    this._formatDuration = this._formatDuration.bind(this);
+    this.generateThumbnailPostUpload = this.generateThumbnailPostUpload.bind(this);
+    this.batchGenerateThumbnails = this.batchGenerateThumbnails.bind(this);
+    this.getVideoDurationFromUrl = this.getVideoDurationFromUrl.bind(this);
   }
 
   /**
@@ -107,7 +118,12 @@ class VideoAnalysisService {
     if (fileSize > 0) {
       // Rough estimate: 1MB ≈ 1 minute for compressed video
       const estimatedSeconds = Math.floor(fileSize / (1024 * 1024) * 60);
-      estimatedDuration = this._formatDuration(estimatedSeconds);
+      try {
+        estimatedDuration = this._formatDuration(estimatedSeconds);
+      } catch (error) {
+        console.warn('⚠️ Duration formatting failed, using default:', error.message);
+        estimatedDuration = '0:00';
+      }
     }
     
     // Generate thumbnail from file name hash
@@ -156,6 +172,20 @@ class VideoAnalysisService {
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);
+  }
+
+  /**
+   * Format duration in seconds to MM:SS format
+   * @param {number} seconds - Duration in seconds
+   * @returns {string} Formatted duration string
+   */
+  _formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '0:00';
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
   /**
@@ -278,7 +308,14 @@ class VideoAnalysisService {
             : 'Unknown';
           
           const analysis = {
-            duration: this._formatDuration(video.duration),
+            duration: (() => {
+              try {
+                return this._formatDuration(video.duration);
+              } catch (error) {
+                console.warn('⚠️ Duration formatting failed, using raw value:', error.message);
+                return video.duration ? `${Math.floor(video.duration / 60)}:${Math.floor(video.duration % 60).toString().padStart(2, '0')}` : '0:00';
+              }
+            })(),
             fileSize: file.size,
             fileName: file.name,
             fileType: file.type,

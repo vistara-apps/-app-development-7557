@@ -54,8 +54,7 @@ export default {
         'glow-red': 'glow-red 2s ease-in-out infinite alternate',
       },
       fontFamily: {
-        'sans': ['Inter', 'system-ui', 'sans-serif'],
-        'phyght': ['Orbitron', 'monospace'], // Futuristic font for PHYGHT branding
+        'phyght': ['Orbitron', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
         'glow': '0 0 20px rgba(255, 0, 0, 0.3)',      // PHYGHT red glow

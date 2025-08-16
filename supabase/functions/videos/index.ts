@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') {
       return await handleGetVideos(req, supabase, user);
     } else if (req.method === 'POST') {
-      requireAdminOrModerator(user);
-      return await handleCreateVideo(req, supabase, user!);
+      // Allow video creation without authentication for guest users
+      return await handleCreateVideo(req, supabase, user);
     }
 
     return createErrorResponse('Method not allowed', 405);
@@ -129,8 +129,11 @@ async function handleCreateVideo(req: Request, supabase: any, user: any) {
     return createErrorResponse('Title is required');
   }
 
+  // Create user ID for guest users or use authenticated user
+  const userId = user?.id || `guest-${Date.now()}`;
+  
   // Create initial vector clock
-  const initialVectorClock = { [user.id]: 1 };
+  const initialVectorClock = { [userId]: 1 };
 
   const { data: video, error } = await supabase
     .from('videos')
@@ -142,7 +145,7 @@ async function handleCreateVideo(req: Request, supabase: any, user: any) {
       is_featured,
       status: 'uploading',
       vector_clock: initialVectorClock,
-      last_modified_by: user.id,
+      last_modified_by: userId,
       version: 1,
     })
     .select(`
