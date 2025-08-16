@@ -130,24 +130,32 @@ async function handleCreateVideo(req: Request, supabase: any, user: any) {
   }
 
   // Create user ID for guest users or use authenticated user
-  const userId = user?.id || `guest-${Date.now()}`;
+  const userId = user?.id || null; // Use null for anonymous users
   
-  // Create initial vector clock
-  const initialVectorClock = { [userId]: 1 };
+  // Create initial vector clock - use a default key for anonymous users
+  const vectorClockKey = userId || 'anonymous';
+  const initialVectorClock = { [vectorClockKey]: 1 };
+
+  // Prepare insert data
+  const insertData: any = {
+    title,
+    description,
+    category,
+    tags,
+    is_featured,
+    status: 'uploading',
+    vector_clock: initialVectorClock,
+    version: 1,
+  };
+
+  // Only add last_modified_by if we have a valid user UUID
+  if (userId) {
+    insertData.last_modified_by = userId;
+  }
 
   const { data: video, error } = await supabase
     .from('videos')
-    .insert({
-      title,
-      description,
-      category,
-      tags,
-      is_featured,
-      status: 'uploading',
-      vector_clock: initialVectorClock,
-      last_modified_by: userId,
-      version: 1,
-    })
+    .insert(insertData)
     .select(`
       id,
       title,

@@ -96,19 +96,28 @@ class SimpleVideoUploadService {
    */
   async _createVideoRecord(videoData) {
     try {
+      // Create video record without last_modified_by for anonymous users
+      // The database will handle this field with a default value or trigger
+      const insertData = {
+        title: videoData.title || 'Untitled Video',
+        description: videoData.description || '',
+        category: videoData.category || 'combat-sports',
+        tags: videoData.tags || [],
+        is_featured: videoData.is_featured || false,
+        status: 'uploading',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Only add last_modified_by if it's a valid UUID (authenticated user)
+      if (videoData.uploadedBy && this._isValidUUID(videoData.uploadedBy)) {
+        insertData.last_modified_by = videoData.uploadedBy;
+      }
+      // For anonymous users, omit this field and let the database handle it
+
       const { data, error } = await supabase
         .from('videos')
-        .insert({
-          title: videoData.title || 'Untitled Video',
-          description: videoData.description || '',
-          category: videoData.category || 'combat-sports',
-          tags: videoData.tags || [],
-          is_featured: videoData.is_featured || false,
-          status: 'uploading',
-          last_modified_by: videoData.uploadedBy || 'guest',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -121,6 +130,15 @@ class SimpleVideoUploadService {
       console.error('❌ Failed to create video record:', error);
       throw error;
     }
+  }
+
+  /**
+   * Check if a string is a valid UUID
+   * @private
+   */
+  _isValidUUID(str) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
   }
 
   /**

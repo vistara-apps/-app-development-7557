@@ -73,9 +73,13 @@ async function handleVideoUpload(req: Request, supabase: any, user: any) {
       file_size: uploadResult.file_size,
       mime_type: uploadResult.mime_type,
       status: 'processing',
-      last_modified_by: user?.id || 'guest', // Handle guest users
       upload_metadata: uploadResult.upload_metadata,
     };
+
+    // Only add last_modified_by if we have a valid user UUID
+    if (user?.id) {
+      updateData.last_modified_by = user.id;
+    }
 
     // Add storage-specific fields
     if (uploadResult.storage_provider === 'aws') {

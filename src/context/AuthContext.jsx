@@ -38,7 +38,8 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(savedUser));
         }
         
-        // Generate or retrieve anonymous ID
+        // Generate or retrieve anonymous ID - use a simple string for tracking
+        // This is NOT used for database operations that require UUIDs
         let anonId = localStorage.getItem('phyght_anonymous_id');
         if (!anonId) {
           anonId = `anon-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -113,9 +114,9 @@ export const AuthProvider = ({ children }) => {
     return !!user || !!anonymousId;
   };
 
-  // Get current user ID (either logged in user ID or anonymous ID)
+  // Get current user ID (only for authenticated users, null for anonymous)
   const getCurrentUserId = () => {
-    return user ? user.id : anonymousId;
+    return user ? user.id : null; // Return null for anonymous users to avoid UUID issues
   };
 
   const value = {
