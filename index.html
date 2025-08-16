@@ -4,8 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Phyght - Unlock exclusive content and earn rewards with our proprietary token" />
-    <title>Phyght - Premium Entertainment Platform</title>
+    <title>PHYGHT TV - Combat Sports Streaming</title>
+    
+    <!-- Preload Google Fonts with CSP-safe approach -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Fallback font loading for CSP-restricted environments -->
+    <script>
+      // CSP-safe font loading fallback
+      if (typeof window !== 'undefined') {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap';
+        link.onerror = () => {
+          console.warn('⚠️ Google Fonts failed to load, using system fonts');
+          document.documentElement.style.setProperty('--phyght-font', 'system-ui, -apple-system, sans-serif');
+        };
+        document.head.appendChild(link);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

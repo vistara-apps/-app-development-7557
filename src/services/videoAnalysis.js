@@ -13,108 +13,361 @@ class VideoAnalysisService {
       // Cheap video analysis using various APIs
       analysis: 'ffmpeg-wasm' // Free, runs in browser
     };
+
+    // Bind methods to ensure proper 'this' context
+    this.analyzeVideo = this.analyzeVideo.bind(this);
+    this.generateThumbnail = this.generateThumbnail.bind(this);
+    this._fallbackVideoAnalysis = this._fallbackVideoAnalysis.bind(this);
+    this._analyzeVideoFromUrl = this._analyzeVideoFromUrl.bind(this);
+    this._generateThumbnailFromUrl = this._generateThumbnailFromUrl.bind(this);
+    this._formatDuration = this._formatDuration.bind(this);
+    this.generateThumbnailPostUpload = this.generateThumbnailPostUpload.bind(this);
+    this.batchGenerateThumbnails = this.batchGenerateThumbnails.bind(this);
+    this.getVideoDurationFromUrl = this.getVideoDurationFromUrl.bind(this);
   }
 
   /**
    * Generate thumbnail from video file
-   * @param {File} videoFile - Video file to analyze
-   * @param {number} timeOffset - Time in seconds to extract frame (default: 5s)
-   * @returns {Promise<string>} Data URL of thumbnail
+   * @param {File} videoFile - Video file to generate thumbnail from
+   * @returns {Promise<string>} Thumbnail data URL or fallback URL
    */
-  async generateThumbnail(videoFile, timeOffset = 5) {
+  async generateThumbnail(videoFile) {
     try {
-      console.log('🎬 Generating thumbnail from video...');
+      console.log('🖼️ Generating thumbnail for:', videoFile.name);
       
-      return new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+      // Check if we can create object URLs (CSP might block this)
+      if (!URL.createObjectURL) {
+        console.warn('⚠️ URL.createObjectURL not available, using fallback thumbnail');
+        return this._generateThumbnailFromFileName(videoFile.name);
+      }
+
+      const videoUrl = URL.createObjectURL(videoFile);
+      console.log('🔗 Created video URL for thumbnail:', videoUrl);
+      
+      try {
+        const thumbnailUrl = await this._generateThumbnailFromUrl(videoUrl, videoFile);
         
-        video.onloadedmetadata = () => {
-          // Set video to specific time
-          video.currentTime = Math.min(timeOffset, video.duration / 2);
-        };
+        // Clean up the blob URL
+        URL.revokeObjectURL(videoUrl);
         
-        video.onseeked = () => {
-          // Draw video frame to canvas
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Convert to data URL
-          const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
-          resolve(thumbnailUrl);
-        };
-        
-        video.onerror = () => {
-          reject(new Error('Failed to load video for thumbnail generation'));
-        };
-        
-        // Load video file
-        video.src = URL.createObjectURL(videoFile);
-        video.load();
-      });
+        return thumbnailUrl;
+      } catch (error) {
+        console.warn('⚠️ Thumbnail generation failed, using fallback:', error.message);
+        URL.revokeObjectURL(videoUrl);
+        return this._generateThumbnailFromFileName(videoFile.name);
+      }
       
     } catch (error) {
       console.error('❌ Thumbnail generation failed:', error);
-      // Return placeholder thumbnail
-      return this.getPlaceholderThumbnail();
+      return this._generateThumbnailFromFileName(videoFile.name);
     }
   }
 
   /**
-   * Analyze video file for metadata
-   * @param {File} videoFile - Video file to analyze
+   * Analyze video file and extract metadata
+   * @param {File} file - Video file to analyze
    * @returns {Promise<Object>} Video analysis results
    */
-  async analyzeVideo(videoFile) {
+  async analyzeVideo(file) {
     try {
-      console.log('🔍 Analyzing video file...');
+      console.log('🎬 Analyzing video file:', file.name);
       
-      const analysis = {
-        duration: 0,
-        resolution: { width: 0, height: 0 },
-        format: videoFile.type,
-        size: videoFile.size,
-        bitrate: 0,
-        fps: 0
-      };
-      
-      // Get basic info from file
-      analysis.size = videoFile.size;
-      analysis.format = videoFile.type;
-      
-      // Get duration and resolution using browser APIs
-      const videoInfo = await this.getVideoInfo(videoFile);
-      analysis.duration = videoInfo.duration;
-      analysis.resolution = {
-        width: videoInfo.width,
-        height: videoInfo.height
-      };
-      
-      // Calculate bitrate (rough estimate)
-      if (analysis.duration > 0) {
-        analysis.bitrate = Math.round((analysis.size * 8) / (analysis.duration * 1000)); // kbps
+      // Check if we can create object URLs (CSP might block this)
+      if (!URL.createObjectURL) {
+        console.warn('⚠️ URL.createObjectURL not available, using fallback analysis');
+        return this._fallbackVideoAnalysis(file);
       }
+
+      const videoUrl = URL.createObjectURL(file);
+      console.log('🔗 Created video URL:', videoUrl);
       
-      // Estimate FPS (most videos are 24, 25, 30, or 60 fps)
-      analysis.fps = this.estimateFPS(analysis.duration, analysis.size);
-      
-      console.log('✅ Video analysis complete:', analysis);
-      return analysis;
+      try {
+        const analysis = await this._analyzeVideoFromUrl(videoUrl, file);
+        
+        // Clean up the blob URL to prevent memory leaks
+        URL.revokeObjectURL(videoUrl);
+        
+        return analysis;
+      } catch (error) {
+        console.warn('⚠️ Video analysis failed, using fallback:', error.message);
+        URL.revokeObjectURL(videoUrl);
+        return this._fallbackVideoAnalysis(file);
+      }
       
     } catch (error) {
       console.error('❌ Video analysis failed:', error);
-      return {
-        duration: 0,
-        resolution: { width: 0, height: 0 },
-        format: videoFile.type,
-        size: videoFile.size,
-        bitrate: 0,
-        fps: 0,
-        error: error.message
-      };
+      return this._fallbackVideoAnalysis(file);
     }
+  }
+
+  /**
+   * Fallback video analysis when blob URLs are blocked by CSP
+   * @param {File} file - Video file to analyze
+   * @returns {Object} Basic video analysis results
+   */
+  _fallbackVideoAnalysis(file) {
+    console.log('🔄 Using fallback video analysis for:', file.name);
+    
+    // Extract basic info from file object
+    const fileSize = file.size;
+    const fileName = file.name;
+    const fileType = file.type;
+    
+    // Estimate duration based on file size and type (rough approximation)
+    let estimatedDuration = '0:00';
+    if (fileSize > 0) {
+      // Rough estimate: 1MB ≈ 1 minute for compressed video
+      const estimatedSeconds = Math.floor(fileSize / (1024 * 1024) * 60);
+      try {
+        estimatedDuration = this._formatDuration(estimatedSeconds);
+      } catch (error) {
+        console.warn('⚠️ Duration formatting failed, using default:', error.message);
+        estimatedDuration = '0:00';
+      }
+    }
+    
+    // Generate thumbnail from file name hash
+    const thumbnailUrl = this._generateThumbnailFromFileName(fileName);
+    
+    return {
+      duration: estimatedDuration,
+      fileSize: fileSize,
+      fileName: fileName,
+      fileType: fileType,
+      resolution: 'Unknown',
+      bitrate: 'Unknown',
+      fps: 'Unknown',
+      thumbnailUrl: thumbnailUrl,
+      analysisMethod: 'fallback'
+    };
+  }
+
+  /**
+   * Generate thumbnail URL from filename (CSP-safe)
+   * @param {string} fileName - Name of the video file
+   * @returns {string} Thumbnail URL
+   */
+  _generateThumbnailFromFileName(fileName) {
+    // Create a deterministic thumbnail based on filename
+    const hash = this._simpleHash(fileName);
+    const colors = [
+      'FF0000', '00FF00', '0000FF', 'FFFF00', 'FF00FF', '00FFFF',
+      'FF8000', '8000FF', '00FF80', 'FF0080', '80FF00', '0080FF'
+    ];
+    const color = colors[hash % colors.length];
+    
+    return `https://picsum.photos/320/180?random=${hash}&blur=2`;
+  }
+
+  /**
+   * Simple hash function for deterministic results
+   * @param {string} str - String to hash
+   * @returns {number} Hash value
+   */
+  _simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Format duration in seconds to MM:SS format
+   * @param {number} seconds - Duration in seconds
+   * @returns {string} Formatted duration string
+   */
+  _formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '0:00';
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Generate thumbnail from video URL (original method)
+   * @param {string} videoUrl - URL of the video
+   * @param {File} videoFile - Original video file
+   * @returns {Promise<string>} Thumbnail data URL
+   */
+  async _generateThumbnailFromUrl(videoUrl, videoFile) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      let thumbnailTimeout;
+      
+      const cleanup = () => {
+        if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
+        video.removeEventListener('loadeddata', handleLoadedData);
+        video.removeEventListener('error', handleError);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.src = '';
+        video.load();
+      };
+      
+      const handleLoadedData = () => {
+        try {
+          console.log('✅ Video loaded for thumbnail generation');
+          
+          // Set canvas dimensions
+          canvas.width = 320;
+          canvas.height = 180;
+          
+          // Generate thumbnail
+          ctx.drawImage(video, 0, 0, 320, 180);
+          const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+          
+          console.log('✅ Thumbnail generated successfully');
+          cleanup();
+          resolve(thumbnailUrl);
+          
+        } catch (error) {
+          console.error('❌ Error generating thumbnail:', error);
+          cleanup();
+          reject(error);
+        }
+      };
+      
+      const handleError = (error) => {
+        console.error('❌ Video thumbnail error:', error);
+        cleanup();
+        reject(new Error('Failed to load video for thumbnail generation'));
+      };
+      
+      const handleCanPlay = () => {
+        // Fallback if loadeddata doesn't fire
+        if (video.readyState >= 2) {
+          handleLoadedData();
+        }
+      };
+      
+      // Set timeout for thumbnail generation
+      thumbnailTimeout = setTimeout(() => {
+        console.warn('⚠️ Thumbnail generation timeout, using fallback');
+        cleanup();
+        reject(new Error('Thumbnail generation timeout'));
+      }, 8000); // 8 second timeout
+      
+      // Set up event listeners
+      video.addEventListener('loadeddata', handleLoadedData);
+      video.addEventListener('error', handleError);
+      video.addEventListener('canplay', handleCanPlay);
+      
+      // Set video source
+      video.crossOrigin = 'anonymous';
+      video.preload = 'metadata';
+      video.src = videoUrl;
+      video.load();
+    });
+  }
+
+  /**
+   * Analyze video from URL (original method)
+   * @param {string} videoUrl - URL of the video
+   * @param {File} file - Original file object
+   * @returns {Promise<Object>} Video analysis results
+   */
+  async _analyzeVideoFromUrl(videoUrl, file) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      let analysisTimeout;
+      
+      const cleanup = () => {
+        if (analysisTimeout) clearTimeout(analysisTimeout);
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener('error', handleError);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.src = '';
+        video.load();
+      };
+      
+      const handleLoadedMetadata = () => {
+        try {
+          console.log('✅ Video metadata loaded successfully');
+          
+          // Set canvas dimensions
+          canvas.width = video.videoWidth || 320;
+          canvas.height = video.videoHeight || 180;
+          
+          // Generate thumbnail
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+          
+          // Calculate bitrate (rough estimate)
+          const bitrate = file.size > 0 && video.duration > 0 
+            ? Math.round((file.size * 8) / (video.duration * 1024 * 1024))
+            : 'Unknown';
+          
+          const analysis = {
+            duration: (() => {
+              try {
+                return this._formatDuration(video.duration);
+              } catch (error) {
+                console.warn('⚠️ Duration formatting failed, using raw value:', error.message);
+                return video.duration ? `${Math.floor(video.duration / 60)}:${Math.floor(video.duration % 60).toString().padStart(2, '0')}` : '0:00';
+              }
+            })(),
+            fileSize: file.size,
+            fileName: file.name,
+            fileType: file.type,
+            resolution: `${video.videoWidth || 'Unknown'}x${video.videoHeight || 'Unknown'}`,
+            bitrate: bitrate !== 'Unknown' ? `${bitrate} Mbps` : 'Unknown',
+            fps: 'Unknown', // HTML5 video doesn't provide FPS
+            thumbnailUrl: thumbnailUrl,
+            analysisMethod: 'full'
+          };
+          
+          console.log('✅ Video analysis complete:', analysis);
+          cleanup();
+          resolve(analysis);
+          
+        } catch (error) {
+          console.error('❌ Error during video analysis:', error);
+          cleanup();
+          reject(error);
+        }
+      };
+      
+      const handleError = (error) => {
+        console.error('❌ Video analysis error:', error);
+        cleanup();
+        reject(new Error('Failed to load video metadata'));
+      };
+      
+      const handleCanPlay = () => {
+        // Fallback if loadedmetadata doesn't fire
+        if (video.readyState >= 1) {
+          handleLoadedMetadata();
+        }
+      };
+      
+      // Set timeout for analysis
+      analysisTimeout = setTimeout(() => {
+        console.warn('⚠️ Video analysis timeout, using fallback');
+        cleanup();
+        reject(new Error('Video analysis timeout'));
+      }, 10000); // 10 second timeout
+      
+      // Set up event listeners
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      video.addEventListener('error', handleError);
+      video.addEventListener('canplay', handleCanPlay);
+      
+      // Set video source
+      video.crossOrigin = 'anonymous';
+      video.preload = 'metadata';
+      video.src = videoUrl;
+      video.load();
+    });
   }
 
   /**
@@ -238,88 +491,82 @@ class VideoAnalysisService {
   }
 
   /**
-   * Generate thumbnail after video upload (for post-processing)
+   * Generate thumbnail after upload (CSP-safe)
    * @param {string} videoUrl - URL of the uploaded video
-   * @param {string} videoId - Video ID for tracking
+   * @param {string} videoId - ID of the video
    * @returns {Promise<string>} Thumbnail URL
    */
   async generateThumbnailPostUpload(videoUrl, videoId) {
     try {
-      console.log('🎬 Generating post-upload thumbnail for video:', videoId);
+      console.log('🖼️ Generating post-upload thumbnail for video:', videoId);
       
-      // In production, you'd call your thumbnail generation API here
-      // For now, we'll simulate the process
+      // Check if this is a blob URL that might be blocked by CSP
+      if (videoUrl.startsWith('blob:')) {
+        console.warn('⚠️ Blob URL detected, CSP might block this. Using fallback thumbnail.');
+        return this._generateThumbnailFromVideoId(videoId);
+      }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate a unique thumbnail URL
-      const thumbnailUrl = `https://picsum.photos/320/180?random=${videoId}-${Date.now()}`;
-      
-      console.log('✅ Post-upload thumbnail generated:', thumbnailUrl);
-      
-      // Dispatch event for UI update
-      window.dispatchEvent(new CustomEvent('thumbnailGenerated', {
-        detail: {
-          videoId,
-          thumbnailUrl
-        }
-      }));
-      
-      return thumbnailUrl;
+      // Try to generate thumbnail from the actual video URL
+      try {
+        const thumbnailUrl = await this._generateThumbnailFromUrl(videoUrl, null);
+        console.log('✅ Post-upload thumbnail generated successfully');
+        return thumbnailUrl;
+      } catch (error) {
+        console.warn('⚠️ Post-upload thumbnail generation failed, using fallback:', error.message);
+        return this._generateThumbnailFromVideoId(videoId);
+      }
       
     } catch (error) {
-      console.error('❌ Post-upload thumbnail generation failed:', error);
-      throw error;
+      console.error('❌ Error in post-upload thumbnail generation:', error);
+      return this._generateThumbnailFromVideoId(videoId);
     }
   }
 
   /**
-   * Batch generate thumbnails for multiple videos
+   * Generate fallback thumbnail from video ID (CSP-safe)
+   * @param {string} videoId - ID of the video
+   * @returns {string} Fallback thumbnail URL
+   */
+  _generateThumbnailFromVideoId(videoId) {
+    // Create a deterministic thumbnail based on video ID
+    const hash = this._simpleHash(videoId);
+    return `https://picsum.photos/320/180?random=${hash}&blur=1`;
+  }
+
+  /**
+   * Batch generate thumbnails for multiple videos (CSP-safe)
    * @param {Array} videos - Array of video objects
-   * @returns {Promise<Array>} Array of thumbnail results
+   * @returns {Promise<void>}
    */
   async batchGenerateThumbnails(videos) {
     try {
-      console.log('🎬 Batch generating thumbnails for', videos.length, 'videos');
-      
-      const results = [];
+      console.log('🖼️ Batch generating thumbnails for', videos.length, 'videos');
       
       for (const video of videos) {
         try {
           if (video.contentFile || video.content_file) {
-            const thumbnailUrl = await this.generateThumbnailPostUpload(
-              video.contentFile || video.content_file,
-              video.id
-            );
+            const videoUrl = video.contentFile || video.content_file;
+            const thumbnailUrl = await this.generateThumbnailPostUpload(videoUrl, video.id);
             
-            results.push({
-              videoId: video.id,
-              success: true,
-              thumbnailUrl
-            });
-          } else {
-            results.push({
-              videoId: video.id,
-              success: false,
-              error: 'No video file available'
-            });
+            // Dispatch event for UI update
+            window.dispatchEvent(new CustomEvent('thumbnailGenerated', {
+              detail: {
+                videoId: video.id,
+                thumbnailUrl: thumbnailUrl
+              }
+            }));
+            
+            console.log('✅ Thumbnail generated for video:', video.title);
           }
         } catch (error) {
-          results.push({
-            videoId: video.id,
-            success: false,
-            error: error.message
-          });
+          console.error('❌ Failed to generate thumbnail for video:', video.title, error);
         }
       }
       
-      console.log('✅ Batch thumbnail generation complete:', results);
-      return results;
+      console.log('✅ Batch thumbnail generation complete');
       
     } catch (error) {
-      console.error('❌ Batch thumbnail generation failed:', error);
-      throw error;
+      console.error('❌ Error in batch thumbnail generation:', error);
     }
   }
 
@@ -332,28 +579,63 @@ class VideoAnalysisService {
     try {
       console.log('🎬 Getting video duration from URL:', videoUrl);
       
+      // Check if this is a blob URL that might be blocked by CSP
+      if (videoUrl.startsWith('blob:')) {
+        console.warn('⚠️ Blob URL detected, CSP might block this. Using fallback duration.');
+        return 0; // Return 0 duration for blob URLs
+      }
+      
       return new Promise((resolve, reject) => {
         const video = document.createElement('video');
+        let durationTimeout;
         
-        video.onloadedmetadata = () => {
+        const cleanup = () => {
+          if (durationTimeout) clearTimeout(durationTimeout);
+          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          video.removeEventListener('error', handleError);
+          video.removeEventListener('canplay', handleCanPlay);
+          video.src = '';
+          video.load();
+        };
+        
+        const handleLoadedMetadata = () => {
           console.log('✅ Video duration loaded:', video.duration);
+          cleanup();
           resolve(video.duration);
         };
         
-        video.onerror = () => {
+        const handleError = () => {
           console.error('❌ Failed to load video for duration check:', videoUrl);
+          cleanup();
           reject(new Error('Failed to load video metadata'));
         };
         
+        const handleCanPlay = () => {
+          // Fallback if loadedmetadata doesn't fire
+          if (video.readyState >= 1 && video.duration > 0) {
+            console.log('✅ Video duration loaded via canplay:', video.duration);
+            cleanup();
+            resolve(video.duration);
+          }
+        };
+        
+        // Set timeout for duration check
+        durationTimeout = setTimeout(() => {
+          console.warn('⚠️ Duration check timeout, using fallback');
+          cleanup();
+          resolve(0); // Return 0 duration on timeout
+        }, 5000); // 5 second timeout
+        
         // Set crossOrigin to handle CORS issues
         video.crossOrigin = 'anonymous';
+        video.preload = 'metadata';
         video.src = videoUrl;
         video.load();
       });
       
     } catch (error) {
       console.error('❌ Error getting video duration:', error);
-      throw error;
+      return 0; // Return 0 duration on error
     }
   }
 }
@@ -361,3 +643,5 @@ class VideoAnalysisService {
 // Create and export a single instance
 export const videoAnalysisService = new VideoAnalysisService();
 export default videoAnalysisService;
+
+

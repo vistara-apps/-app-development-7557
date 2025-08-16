@@ -11,18 +11,31 @@ class VideoAPI {
   }
 
   async getAuthHeaders() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return {
-      'Authorization': `Bearer ${session?.access_token}`,
-      'Content-Type': 'application/json',
-    };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return {
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+        'Content-Type': 'application/json',
+      };
+    } catch (error) {
+      // Handle case where auth is not available
+      return {
+        'Authorization': '',
+        'Content-Type': 'application/json',
+      };
+    }
   }
 
   async getAuthHeadersForFormData() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return {
-      'Authorization': `Bearer ${session?.access_token}`,
-    };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token ? {
+        'Authorization': `Bearer ${session.access_token}`,
+      } : {};
+    } catch (error) {
+      // Handle case where auth is not available
+      return {};
+    }
   }
 
   // Get all videos with pagination and filters

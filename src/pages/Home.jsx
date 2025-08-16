@@ -63,167 +63,62 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-phyght-black via-phyght-gray to-phyght-black text-phyght-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-red-900 to-red-700 py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Welcome to <span className="text-yellow-400">Phyght TV</span>
+      <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-r from-phyght-red to-transparent"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-phyght-red rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-phyght-red rounded-full blur-2xl"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-black mb-8 font-phyght tracking-wider leading-tight">
+            <span className="text-phyght-white drop-shadow-2xl">PHYGHT</span>
+            <br />
+            <span className="text-phyght-red drop-shadow-2xl">TV</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-gray-200">
-            The Ultimate Combat Sports Streaming Platform
+          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+            The ultimate combat sports streaming platform. Watch, upload, and share the best fights with stunning quality.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Link
+              to="/upload"
+              className="group bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white px-10 py-4 rounded-2xl font-bold text-xl transition-all duration-500 shadow-phyght-red hover:shadow-phyght-red-lg transform hover:scale-105 hover:-translate-y-1"
+            >
+              <span className="flex items-center justify-center space-x-3">
+                <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">🎬</span>
+                <span>Upload Video</span>
+              </span>
+            </Link>
             <Link
               to="/browse"
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
+              className="group border-3 border-phyght-red text-phyght-red hover:bg-phyght-red hover:text-phyght-white px-10 py-4 rounded-2xl font-bold text-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-1"
             >
-              Start Watching
+              <span className="flex items-center justify-center space-x-3">
+                <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🔍</span>
+                <span>Browse Content</span>
+              </span>
             </Link>
-            {!user && (
-              <Link
-                to="/auth"
-                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-red-900 px-8 py-3 rounded-lg text-lg font-semibold transition-colors"
-              >
-                Sign Up Free
-              </Link>
-            )}
           </div>
         </div>
       </section>
 
-      {/* Featured Content */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold flex items-center">
-              <Crown className="w-8 h-8 text-yellow-400 mr-3" />
-              Featured Content
-            </h2>
-            <Link
-              to="/browse"
-              className="text-red-400 hover:text-red-300 transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-          
-          {featuredContent.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredContent.map((content) => (
-                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <Play className="w-16 h-16 mx-auto mb-4" />
-                <p className="text-xl">No featured content yet</p>
-                <p className="text-sm">Upload your first video to get started!</p>
-              </div>
-              {user && (
-                <Link
-                  to="/upload"
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
-                >
-                  Upload Video
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Trending Content */}
-      <section className="py-16 bg-dark-800">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold flex items-center">
-              <TrendingUp className="w-8 h-8 text-red-400 mr-3" />
-              Trending Now
-            </h2>
-            <Link
-              to="/browse"
-              className="text-red-400 hover:text-red-300 transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-          
-          {trendingContent.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trendingContent.map((content) => (
-                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <TrendingUp className="w-16 h-16 mx-auto mb-4" />
-                <p className="text-xl">No trending content yet</p>
-                <p className="text-sm">Content will appear here as it gains popularity</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* All Videos Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold flex items-center">
-              <Play className="w-8 h-8 text-blue-400 mr-3" />
-              All Videos
-            </h2>
-            <Link
-              to="/browse"
-              className="text-red-400 hover:text-red-300 transition-colors"
-            >
-              View All
-            </Link>
-          </div>
-          
-          {content.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {content.map((content) => (
-                <ContentCard key={content.id} content={content} updateThumbnail={updateVideoThumbnail} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <Play className="w-16 h-16 mx-auto mb-4" />
-                <p className="text-xl">No videos uploaded yet</p>
-                <p className="text-sm">Be the first to upload a video!</p>
-              </div>
-              {user && (
-                <Link
-                  to="/upload"
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
-                >
-                  Upload First Video
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Platform Statistics</h2>
-            <div className="flex gap-2">
+      {/* Debug Tools */}
+      <div className="px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-gradient-to-r from-phyght-gray to-phyght-gray-light rounded-2xl p-6 border border-phyght-gray-light shadow-xl">
+            <h3 className="text-phyght-red font-bold mb-4 text-lg flex items-center">
+              <span className="mr-2">🧪</span>
+              Developer Tools
+            </h3>
+            <div className="flex flex-wrap gap-3">
               <button
-                onClick={() => {
-                  console.log('🧪 Home: Manual loadContent test...');
-                  refreshContent();
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                onClick={refreshContent}
+                className="bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-phyght-red"
               >
-                🧪 Test Load
+                🔄 Refresh Content
               </button>
               <button
                 onClick={async () => {
@@ -236,7 +131,7 @@ const Home = () => {
                     console.error('❌ Failed to generate thumbnails:', error);
                   }
                 }}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 🎬 Generate Thumbnails
               </button>
@@ -251,7 +146,7 @@ const Home = () => {
                     console.error('❌ Failed to fix video durations:', error);
                   }
                 }}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 ⏱️ Fix Durations
               </button>
@@ -266,44 +161,126 @@ const Home = () => {
                     console.error('❌ Failed to test video URLs:', error);
                   }
                 }}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 🧪 Test URLs
               </button>
-              <button
-                onClick={refreshContent}
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                {loading ? 'Refreshing...' : '🔄 Refresh Content'}
-              </button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div className="bg-dark-800 p-6 rounded-lg">
-              <div className="text-3xl font-bold text-red-400 mb-2">
+        </div>
+      </div>
+
+      {/* Featured Content */}
+      {featuredContent.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 mb-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center mb-8">
+              <div className="w-12 h-12 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mr-4 shadow-phyght-red">
+                <span className="text-2xl">🔥</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-phyght-white">
+                Featured Fights
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredContent.map((video) => (
+                <ContentCard
+                  key={video.id}
+                  video={video}
+                  updateThumbnail={updateVideoThumbnail}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Trending Content */}
+      {trendingContent.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 mb-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center mb-8">
+              <div className="w-12 h-12 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mr-4 shadow-phyght-red">
+                <span className="text-2xl">📈</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-phyght-white">
+                Trending Now
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {trendingContent.map((video) => (
+                <ContentCard
+                  key={video.id}
+                  video={video}
+                  updateThumbnail={updateVideoThumbnail}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* All Videos */}
+      {content.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 mb-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center mb-8">
+              <div className="w-12 h-12 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mr-4 shadow-phyght-red">
+                <span className="text-2xl">🥊</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-phyght-white">
+                All Fights
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {content.map((video) => (
+                <ContentCard
+                  key={video.id}
+                  video={video}
+                  updateThumbnail={updateVideoThumbnail}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Stats Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-20 bg-gradient-to-r from-phyght-gray to-phyght-gray-light">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-phyght-white mb-4">
+              Platform Statistics
+            </h2>
+            <p className="text-gray-300 text-lg">Your combat sports content hub</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-phyght-red group-hover:scale-110 transition-transform duration-300">
+                <span className="text-3xl">🎬</span>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-phyght-red mb-2">
                 {content.length}
               </div>
-              <div className="text-gray-400">Videos Available</div>
+              <div className="text-gray-300 text-lg">Videos Available</div>
             </div>
-            <div className="bg-dark-800 p-6 rounded-lg">
-              <div className="text-3xl font-bold text-blue-400 mb-2">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-phyght-red group-hover:scale-110 transition-transform duration-300">
+                <span className="text-3xl">🔥</span>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-phyght-red mb-2">
                 {featuredContent.length}
               </div>
-              <div className="text-gray-400">Featured Videos</div>
+              <div className="text-gray-300 text-lg">Featured Fights</div>
             </div>
-            <div className="bg-dark-800 p-6 rounded-lg">
-              <div className="text-3xl font-bold text-green-400 mb-2">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-phyght-red group-hover:scale-110 transition-transform duration-300">
+                <span className="text-3xl">📈</span>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-phyght-red mb-2">
                 {trendingContent.length}
               </div>
-              <div className="text-gray-400">Trending Now</div>
-            </div>
-            <div className="bg-dark-800 p-6 rounded-lg">
-              <div className="text-3xl font-bold text-yellow-400 mb-2">
-                {user ? 'Active' : 'Free'}
-              </div>
-              <div className="text-gray-400">Your Status</div>
+              <div className="text-gray-300 text-lg">Trending Now</div>
             </div>
           </div>
         </div>

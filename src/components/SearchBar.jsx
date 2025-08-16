@@ -52,11 +52,11 @@ const SearchBar = ({
   ];
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-6 ${className}`}>
       {/* Search Input */}
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="h-6 w-6 text-gray-400" />
         </div>
         
         <input
@@ -64,14 +64,14 @@ const SearchBar = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="search-bar block w-full pl-10 pr-12 py-3 rounded-sm text-white placeholder-gray-400 focus:outline-none"
+          className="block w-full pl-12 pr-16 py-4 rounded-xl text-phyght-white placeholder-gray-400 focus:outline-none bg-phyght-black border-2 border-phyght-gray-light focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
         />
 
-        <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-3">
+        <div className="absolute inset-y-0 right-0 flex items-center space-x-3 pr-4">
           {query && (
             <button
               onClick={clearSearch}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-phyght-red transition-colors duration-300 p-1 rounded-lg hover:bg-phyght-gray-light"
             >
               <X className="h-5 w-5" />
             </button>
@@ -79,8 +79,8 @@ const SearchBar = ({
           
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`text-gray-400 hover:text-white transition-colors ${
-              showFilters ? 'text-primary-500' : ''
+            className={`text-gray-400 hover:text-phyght-red transition-colors duration-300 p-2 rounded-lg hover:bg-phyght-gray-light ${
+              showFilters ? 'text-phyght-red bg-phyght-gray-light' : ''
             }`}
           >
             <Filter className="h-5 w-5" />
@@ -90,19 +90,19 @@ const SearchBar = ({
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div className="bg-dark-850 rounded-lg p-4 space-y-4 border border-dark-700">
-          <h4 className="text-white font-medium">Advanced Filters</h4>
+        <div className="bg-gradient-to-r from-phyght-gray to-phyght-gray-light rounded-2xl p-6 space-y-6 border border-phyght-gray-light shadow-xl">
+          <h4 className="text-phyght-white font-bold text-lg">🔍 Advanced Filters</h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Combat Sport
+              <label className="block text-sm font-semibold text-phyght-white mb-3">
+                🥊 Combat Sport
               </label>
               <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full bg-dark-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-phyght-black text-phyght-white border-2 border-phyght-gray-light rounded-xl px-4 py-3 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
               >
                 <option value="all">All Sports</option>
                 {categories.map((category) => (
@@ -115,13 +115,13 @@ const SearchBar = ({
 
             {/* Organization Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Organization
+              <label className="block text-sm font-semibold text-phyght-white mb-3">
+                🏆 Organization
               </label>
               <select
                 value={filters.organization}
                 onChange={(e) => handleFilterChange('organization', e.target.value)}
-                className="w-full bg-dark-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-phyght-black text-phyght-white border-2 border-phyght-gray-light rounded-xl px-4 py-3 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
               >
                 <option value="all">All Organizations</option>
                 {organizations.map((org) => (
@@ -134,13 +134,13 @@ const SearchBar = ({
 
             {/* Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Content Type
+              <label className="block text-sm font-semibold text-phyght-white mb-3">
+                📺 Content Type
               </label>
               <select
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="w-full bg-dark-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full bg-phyght-black text-phyght-white border-2 border-phyght-gray-light rounded-xl px-4 py-3 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
               >
                 {fightTypes.map((type) => (
                   <option key={type.id} value={type.id}>
@@ -153,15 +153,15 @@ const SearchBar = ({
 
           {/* Quick Filter Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Quick Filters
+            <label className="block text-sm font-semibold text-phyght-white mb-3">
+              ⚡ Quick Filters
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {['championship', 'knockout', 'submission', 'decision', 'title-fight', 'tournament'].map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setQuery(tag)}
-                  className="px-3 py-1 bg-dark-700 text-gray-300 rounded-full text-sm hover:bg-red-600 hover:text-white transition-colors"
+                  className="px-4 py-2 bg-phyght-black text-gray-300 rounded-xl text-sm hover:bg-phyght-red hover:text-phyght-white transition-all duration-300 border border-phyght-gray-light hover:border-phyght-red transform hover:scale-105"
                 >
                   #{tag}
                 </button>
@@ -173,9 +173,9 @@ const SearchBar = ({
           <div className="flex justify-end">
             <button
               onClick={clearSearch}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 shadow-phyght-red"
             >
-              Clear All Filters
+              🗑️ Clear All Filters
             </button>
           </div>
         </div>

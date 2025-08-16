@@ -14,12 +14,13 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const user = await getAuthenticatedUser(req);
-    requireAdminOrModerator(user);
-
+    
+    // Allow uploads without authentication for guest users
+    // This enables video uploads without requiring login or wallet connection
     if (req.method === 'POST') {
-      return await handleVideoUpload(req, supabase, user!);
+      return await handleVideoUpload(req, supabase, user);
     } else if (req.method === 'PUT') {
-      return await handleUploadComplete(req, supabase, user!);
+      return await handleUploadComplete(req, supabase, user);
     }
 
     return createErrorResponse('Method not allowed', 405);
@@ -72,9 +73,13 @@ async function handleVideoUpload(req: Request, supabase: any, user: any) {
       file_size: uploadResult.file_size,
       mime_type: uploadResult.mime_type,
       status: 'processing',
-      last_modified_by: user.id,
       upload_metadata: uploadResult.upload_metadata,
     };
+
+    // Only add last_modified_by if we have a valid user UUID
+    if (user?.id) {
+      updateData.last_modified_by = user.id;
+    }
 
     // Add storage-specific fields
     if (uploadResult.storage_provider === 'aws') {

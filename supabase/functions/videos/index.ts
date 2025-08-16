@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') {
       return await handleGetVideos(req, supabase, user);
     } else if (req.method === 'POST') {
-      requireAdminOrModerator(user);
-      return await handleCreateVideo(req, supabase, user!);
+      // Allow video creation without authentication for guest users
+      return await handleCreateVideo(req, supabase, user);
     }
 
     return createErrorResponse('Method not allowed', 405);
@@ -129,22 +129,33 @@ async function handleCreateVideo(req: Request, supabase: any, user: any) {
     return createErrorResponse('Title is required');
   }
 
-  // Create initial vector clock
-  const initialVectorClock = { [user.id]: 1 };
+  // Create user ID for guest users or use authenticated user
+  const userId = user?.id || null; // Use null for anonymous users
+  
+  // Create initial vector clock - use a default key for anonymous users
+  const vectorClockKey = userId || 'anonymous';
+  const initialVectorClock = { [vectorClockKey]: 1 };
+
+  // Prepare insert data
+  const insertData: any = {
+    title,
+    description,
+    category,
+    tags,
+    is_featured,
+    status: 'uploading',
+    vector_clock: initialVectorClock,
+    version: 1,
+  };
+
+  // Only add last_modified_by if we have a valid user UUID
+  if (userId) {
+    insertData.last_modified_by = userId;
+  }
 
   const { data: video, error } = await supabase
     .from('videos')
-    .insert({
-      title,
-      description,
-      category,
-      tags,
-      is_featured,
-      status: 'uploading',
-      vector_clock: initialVectorClock,
-      last_modified_by: user.id,
-      version: 1,
-    })
+    .insert(insertData)
     .select(`
       id,
       title,

@@ -17,21 +17,23 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-dark-950 border-b border-dark-800 sticky top-0 z-40 shadow-lg">
+    <header className="bg-gradient-to-r from-phyght-black via-phyght-gray to-phyght-black border-b border-phyght-gray-light sticky top-0 z-40 shadow-phyght-red backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo - Pornhub style */}
-          <Link to="/" className="flex items-center space-x-3">
+        <div className="flex justify-between items-center h-20">
+          {/* PHYGHT Logo */}
+          <Link to="/" className="flex items-center space-x-3 group">
             <div className="flex items-center">
-              <div className="bg-white text-black px-3 py-1 rounded-sm font-bold text-lg">
-                Phyght
+              <div className="bg-gradient-to-r from-phyght-white to-gray-100 text-phyght-black px-4 py-2 rounded-xl font-black text-xl font-phyght tracking-wider shadow-lg group-hover:shadow-phyght-red transition-all duration-300 transform group-hover:scale-105">
+                PHYGHT
               </div>
-              <div className="bg-primary-500 text-white px-2 py-1 rounded-sm font-bold text-lg ml-1">
+              <div className="bg-gradient-to-r from-phyght-red to-phyght-red-dark text-phyght-white px-3 py-2 rounded-xl font-black text-xl ml-2 font-phyght tracking-wider shadow-phyght-red group-hover:shadow-phyght-red-lg transition-all duration-300 transform group-hover:scale-105">
                 TV
               </div>
             </div>
             {isAdmin && (
-              <Shield className="w-4 h-4 text-secondary-500" title="Admin Access" />
+              <div className="ml-3 p-2 bg-gradient-to-r from-phyght-red to-phyght-red-dark rounded-lg shadow-phyght-red">
+                <Shield className="w-5 h-5 text-phyght-white" title="Admin Access" />
+              </div>
             )}
           </Link>
 
@@ -41,10 +43,10 @@ const Header = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-lg ${
                   item.current
-                    ? 'text-primary-500 border-b-2 border-primary-500'
-                    : 'text-gray-300 hover:text-white hover:text-primary-400'
+                    ? 'text-phyght-white bg-gradient-to-r from-phyght-red to-phyght-red-dark shadow-phyght-red'
+                    : 'text-gray-300 hover:text-phyght-white hover:bg-phyght-gray-light'
                 }`}
               >
                 {item.name}
@@ -59,9 +61,9 @@ const Header = () => {
             {isAdmin && (
               <Link
                 to="/admin-phyght-2024"
-                className="hidden sm:flex items-center space-x-1 bg-secondary-600 hover:bg-secondary-700 px-3 py-1 rounded-sm text-white text-sm transition-colors font-medium"
+                className="hidden sm:flex items-center space-x-2 bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white px-4 py-2 rounded-xl text-sm transition-all duration-300 font-semibold shadow-phyght-red hover:shadow-phyght-red-lg transform hover:scale-105"
               >
-                <Shield className="w-3 h-3" />
+                <Shield className="w-4 h-4" />
                 <span>Admin</span>
               </Link>
             )}
@@ -70,9 +72,9 @@ const Header = () => {
               {/* Upload Video Button - Always visible */}
               <Link
                 to="/upload"
-                className="flex items-center space-x-1 bg-primary-600 hover:bg-primary-700 px-3 py-1 rounded-sm text-white text-sm transition-colors font-medium"
+                className="flex items-center space-x-2 bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white px-4 py-2 rounded-xl text-sm transition-all duration-300 font-semibold shadow-phyght-red hover:shadow-phyght-red-lg transform hover:scale-105"
               >
-                <Upload className="w-3 h-3" />
+                <Upload className="w-4 h-4" />
                 <span>Upload</span>
               </Link>
               
@@ -106,7 +108,7 @@ const Header = () => {
                   </button>
                   <button
                     onClick={() => openAuthModal('register')}
-                    className="ph-button px-4 py-2 text-sm"
+                    className="bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-300 shadow-phyght-red hover:shadow-phyght-red-lg transform hover:scale-105"
                   >
                     Join Now
                   </button>
@@ -117,7 +119,7 @@ const Header = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-gray-400 hover:text-white"
+              className="md:hidden text-gray-400 hover:text-phyght-white transition-all duration-300 p-2 rounded-lg hover:bg-phyght-gray-light"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -127,17 +129,17 @@ const Header = () => {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-dark-900 border-t border-gray-700">
-          <div className="px-2 pt-2 pb-3 space-y-1">
+        <div className="md:hidden bg-gradient-to-b from-phyght-gray to-phyght-gray-light border-t border-phyght-gray-light">
+          <div className="px-4 pt-4 pb-6 space-y-2">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                className={`block px-4 py-3 text-base font-semibold rounded-xl transition-all duration-300 ${
                   item.current
-                    ? 'text-primary-500 bg-dark-800'
-                    : 'text-gray-300 hover:text-white hover:bg-dark-800'
+                    ? 'text-phyght-white bg-gradient-to-r from-phyght-red to-phyght-red-dark shadow-phyght-red'
+                    : 'text-gray-300 hover:text-phyght-white hover:bg-phyght-gray-light'
                 }`}
               >
                 {item.name}

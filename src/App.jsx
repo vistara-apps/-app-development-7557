@@ -33,7 +33,7 @@ function AppContent() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-dark-900">
+      <div className="min-h-screen bg-gradient-to-br from-phyght-black via-phyght-gray to-phyght-black">
         <Header />
         
         <main className={isMobile ? "pb-20" : ""}>

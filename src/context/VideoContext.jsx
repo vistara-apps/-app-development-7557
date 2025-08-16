@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { videoManagementService } from '../services/videoManagement';
+import { simpleVideoUploadService } from '../services/simpleVideoUpload';
 import { useAuth } from './AuthContext';
 
 const VideoContext = createContext();
@@ -74,7 +75,19 @@ export const VideoProvider = ({ children }) => {
         uploadedBy: videoData.uploadedBy || getCurrentUserId() || 'anonymous'
       };
       
-      const newVideo = await videoManagementService.addVideo(enhancedVideoData, file);
+      // Use simple upload service for better deployment reliability
+      const newVideo = await simpleVideoUploadService.uploadVideo(
+        enhancedVideoData, 
+        file, 
+        (progress, message) => {
+          // Update progress for UI
+          setUploadProgress(prev => ({
+            ...prev,
+            [enhancedVideoData.title || 'current']: progress
+          }));
+        }
+      );
+      
       await loadAdminVideos(); // Refresh the list
       return newVideo;
     } catch (error) {
