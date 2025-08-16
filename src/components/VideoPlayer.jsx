@@ -9,7 +9,8 @@ import {
   SkipBack, 
   SkipForward,
   Settings,
-  Download
+  Download,
+  Star
 } from 'lucide-react';
 
 const VideoPlayer = ({ 
@@ -32,6 +33,12 @@ const VideoPlayer = ({
   const [showControls, setShowControls] = useState(true);
   const [quality, setQuality] = useState('auto');
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [showError, setShowError] = useState(false);
+
+  const handleRetry = () => {
+    setShowError(false);
+    window.location.reload();
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -162,6 +169,27 @@ const VideoPlayer = ({
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
+      {/* Error Overlay */}
+      {showError && (
+        <div className="absolute inset-0 bg-phyght-black bg-opacity-90 flex flex-col items-center justify-center text-center p-6">
+          <div className="text-phyght-red text-6xl mb-4">❌</div>
+          <h3 className="text-phyght-white text-xl font-semibold mb-2">Video Error</h3>
+          <p className="text-gray-300 mb-4">Unable to play this video</p>
+          
+          <div className="bg-phyght-gray rounded-lg p-4 mb-4 text-left max-w-md">
+            <p className="text-phyght-white text-sm font-medium mb-2">Source:</p>
+            <p className="text-gray-400 text-xs break-all">{src}</p>
+          </div>
+          
+          <button
+            onClick={handleRetry}
+            className="bg-phyght-red hover:bg-phyght-red-dark text-phyght-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Video Element */}
       <video
         ref={videoRef}
@@ -176,6 +204,7 @@ const VideoPlayer = ({
           console.error('Video source:', src);
           console.error('Video element:', videoRef.current);
           console.error('Error details:', e.target.error);
+          setShowError(true);
         }}
         onLoadedMetadata={() => {
           console.log('Video metadata loaded successfully');
@@ -193,161 +222,37 @@ const VideoPlayer = ({
         }}
       />
 
-      {/* Loading Overlay */}
-      {!src && (
-        <div className="absolute inset-0 flex items-center justify-center bg-dark-800">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white">Loading video...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Error Overlay */}
-      {src && !isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center bg-dark-800">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-white mb-2">Video playback error</p>
-            <p className="text-gray-400 text-sm">Source: {src}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded mt-2"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Play/Pause Overlay */}
-      {!isPlaying && src && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+      {!isPlaying && !showError && (
+        <div className="absolute inset-0 flex items-center justify-center">
           <button
             onClick={togglePlay}
-            className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full transition-colors"
+            className="bg-phyght-red bg-opacity-90 hover:bg-opacity-100 rounded-full p-6 transition-all duration-300 transform hover:scale-110 shadow-phyght-red"
           >
-            <Play className="w-8 h-8" />
+            <Play className="w-12 h-12 text-phyght-white" />
           </button>
         </div>
       )}
 
-      {/* Controls */}
-      {controls && (
-        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}>
-          {/* Progress Bar */}
-          <div 
-            ref={progressRef}
-            className="w-full h-2 bg-gray-600 rounded-full cursor-pointer mb-4"
-            onClick={handleProgressClick}
-          >
-            <div 
-              className="h-full bg-red-600 rounded-full relative"
-              style={{ width: `${progressPercentage}%` }}
-            >
-              <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-red-600 rounded-full"></div>
-            </div>
+      {/* Video Controls */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-phyght-black to-transparent p-4">
+        <div className="flex items-center justify-between text-phyght-white text-sm">
+          <div className="flex items-center space-x-4">
+            <span>{formatTime(currentTime)}</span>
+            <span>{duration > 0 ? formatTime(duration) : '0:00'}</span>
           </div>
-
-          {/* Control Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Play/Pause */}
-              <button
-                onClick={togglePlay}
-                className="text-white hover:text-red-400 transition-colors"
-              >
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-              </button>
-
-              {/* Skip Buttons */}
-              <button
-                onClick={() => skip(-10)}
-                className="text-white hover:text-red-400 transition-colors"
-              >
-                <SkipBack className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={() => skip(10)}
-                className="text-white hover:text-red-400 transition-colors"
-              >
-                <SkipForward className="w-5 h-5" />
-              </button>
-
-              {/* Volume */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={toggleMute}
-                  className="text-white hover:text-red-400 transition-colors"
-                >
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-                
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-
-              {/* Time Display */}
-              <div className="text-white text-sm">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Playback Speed */}
-              <select
-                value={playbackRate}
-                onChange={(e) => {
-                  const rate = parseFloat(e.target.value);
-                  setPlaybackRate(rate);
-                  if (videoRef.current) {
-                    videoRef.current.playbackRate = rate;
-                  }
-                }}
-                className="bg-dark-700 text-white text-sm px-2 py-1 rounded border border-gray-600 focus:border-red-500 focus:outline-none"
-              >
-                <option value={0.5}>0.5x</option>
-                <option value={0.75}>0.75x</option>
-                <option value={1}>1x</option>
-                <option value={1.25}>1.25x</option>
-                <option value={1.5}>1.5x</option>
-                <option value={2}>2x</option>
-              </select>
-
-              {/* Quality Selector */}
-              <select
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-                className="bg-dark-700 text-white text-sm px-2 py-1 rounded border border-gray-600 focus:border-red-500 focus:outline-none"
-              >
-                <option value="auto">Auto</option>
-                <option value="1080p">1080p</option>
-                <option value="720p">720p</option>
-                <option value="480p">480p</option>
-                <option value="360p">360p</option>
-              </select>
-
-              {/* Fullscreen */}
-              <button
-                onClick={toggleFullscreen}
-                className="text-white hover:text-red-400 transition-colors"
-              >
-                {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-              </button>
+          <div className="flex items-center space-x-4">
+            <span>0 views</span>
+            <div className="flex items-center space-x-1">
+              <Star className="w-4 h-4 text-phyght-red" />
+              <span>4.5</span>
             </div>
           </div>
         </div>
-      )}
+        <div className="text-center text-xs text-gray-400 mt-1">
+          PHYGHT TV • N/A
+        </div>
+      </div>
 
       {/* Title Overlay */}
       {title && (

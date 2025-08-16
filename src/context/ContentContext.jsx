@@ -269,8 +269,37 @@ export const ContentProvider = ({ children }) => {
   const getCategories = () => {
     if (!content || content.length === 0) return [];
     
-    const categories = [...new Set(content.map(video => video.category))];
-    return categories.filter(cat => cat && cat.trim() !== '');
+    // Get unique categories from content
+    const uniqueCategories = [...new Set(content.map(video => video.category))];
+    
+    // Map to the format expected by CategoryFilter
+    return uniqueCategories
+      .filter(cat => cat && cat.trim() !== '')
+      .map(category => ({
+        id: category,
+        name: category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        icon: getCategoryIcon(category)
+      }));
+  };
+
+  // Helper function to get category icons
+  const getCategoryIcon = (category) => {
+    const iconMap = {
+      'mma': '🥊',
+      'boxing': '🥊',
+      'wrestling': '🤼',
+      'jiu-jitsu': '🥋',
+      'kickboxing': '🥊',
+      'karate': '🥋',
+      'taekwondo': '🥋',
+      'muay-thai': '🥊',
+      'combat-sports': '⚔️',
+      'tutorials': '📚',
+      'highlights': '🔥',
+      'default': '🥊'
+    };
+    
+    return iconMap[category] || iconMap.default;
   };
 
   const addContent = (newContent) => {

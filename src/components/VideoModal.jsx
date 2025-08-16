@@ -28,19 +28,19 @@ const VideoModal = ({ isOpen, onClose, content }) => {
   if (!isOpen || !content) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
-      <div className="relative w-full max-w-6xl mx-4 bg-dark-900 rounded-lg overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-phyght-black bg-opacity-95 backdrop-blur-sm">
+      <div className="relative w-full max-w-6xl mx-4 bg-gradient-to-r from-phyght-gray to-phyght-gray-light rounded-2xl overflow-hidden border border-phyght-gray-light shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-dark-800">
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-phyght-black to-phyght-gray border-b border-phyght-gray-light">
           <div>
-            <h2 className="text-white text-lg font-semibold">{content.title}</h2>
+            <h2 className="text-phyght-white text-xl font-bold mb-2">{content.title}</h2>
             {content.fighters && (
-              <p className="text-red-400 text-sm">{content.fighters.join(' vs ')}</p>
+              <p className="text-phyght-red text-sm font-semibold">{content.fighters.join(' vs ')}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-phyght-red transition-colors duration-300 p-2 rounded-lg hover:bg-phyght-gray-light"
           >
             <X className="w-6 h-6" />
           </button>
@@ -49,8 +49,8 @@ const VideoModal = ({ isOpen, onClose, content }) => {
         {/* Video Player */}
         <div className="aspect-video">
           <VideoPlayer
-            src={content.contentFile}
-            poster={content.previewThumbnail}
+            src={content.contentFile || content.content_file}
+            poster={content.previewThumbnail || content.thumbnail}
             title={content.title}
             autoPlay={true}
             onTimeUpdate={(time) => {
@@ -64,30 +64,39 @@ const VideoModal = ({ isOpen, onClose, content }) => {
         </div>
 
         {/* Video Info */}
-        <div className="p-4 bg-dark-800">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-4 text-sm text-gray-400">
-              <span>{content.duration}</span>
-              <span>{content.views?.toLocaleString()} views</span>
-              <span>⭐ {content.rating}</span>
+        <div className="p-6 bg-gradient-to-r from-phyght-black to-phyght-gray">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-6 text-sm text-gray-300">
+              <span className="flex items-center space-x-2">
+                <span className="text-phyght-red">⏱️</span>
+                <span>{content.duration || '0:00'}</span>
+              </span>
+              <span className="flex items-center space-x-2">
+                <span className="text-phyght-red">👁️</span>
+                <span>{content.views?.toLocaleString() || 0} views</span>
+              </span>
+              <span className="flex items-center space-x-2">
+                <span className="text-phyght-red">⭐</span>
+                <span>{content.rating || 4.5}</span>
+              </span>
             </div>
-            <div className="text-sm text-gray-400">
-              {content.organization} • {content.weightClass}
+            <div className="text-sm text-gray-300">
+              {content.organization || 'Unknown'} • {content.weightClass || 'N/A'}
             </div>
           </div>
           
-          <p className="text-gray-300 text-sm leading-relaxed">
-            {content.description}
+          <p className="text-gray-300 text-base leading-relaxed mb-4">
+            {content.description || 'No description available'}
           </p>
           
-          {content.tags && (
-            <div className="flex flex-wrap gap-2 mt-3">
+          {content.tags && content.tags.length > 0 && (
+            <div className="flex flex-wrap gap-3">
               {content.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-red-600 text-white text-xs rounded-full"
+                  className="px-3 py-1 bg-gradient-to-r from-phyght-red to-phyght-red-dark text-phyght-white text-xs rounded-full font-medium shadow-phyght-red"
                 >
-                  {tag}
+                  #{tag}
                 </span>
               ))}
             </div>

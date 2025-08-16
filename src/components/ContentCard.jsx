@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Play, Clock, Eye, Image, RefreshCw } from 'lucide-react';
+import { Play, Clock, Eye, Image, RefreshCw, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useVideo } from '../context/VideoContext';
 import videoAnalysisService from '../services/videoAnalysis';
 
-const ContentCard = ({ content, updateThumbnail }) => {
+const ContentCard = ({ video, updateThumbnail }) => {
   const { user, openAuthModal } = useAuth();
   const { openVideoModal } = useVideo();
   const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
   const [thumbnailError, setThumbnailError] = useState(false);
 
   const handleWatch = () => {
-    openVideoModal(content);
+    openVideoModal(video);
   };
 
   const canWatch = () => {
@@ -23,7 +23,7 @@ const ContentCard = ({ content, updateThumbnail }) => {
   };
 
   const generateThumbnail = async () => {
-    if (!content.contentFile && !content.content_file) {
+    if (!video.contentFile && !video.content_file) {
       console.error('No video file available for thumbnail generation');
       return;
     }
@@ -32,11 +32,11 @@ const ContentCard = ({ content, updateThumbnail }) => {
     try {
       // For now, we'll use a random image as placeholder
       // In production, you'd call your thumbnail generation API
-      const newThumbnail = `https://picsum.photos/320/180?random=${content.id}-${Date.now()}`;
+      const newThumbnail = `https://picsum.photos/320/180?random=${video.id}-${Date.now()}`;
       
       // Update the content with new thumbnail
       if (updateThumbnail) {
-        updateThumbnail(content.id, newThumbnail);
+        updateThumbnail(video.id, newThumbnail);
       }
       
       setThumbnailError(false);
@@ -48,105 +48,95 @@ const ContentCard = ({ content, updateThumbnail }) => {
   };
 
   return (
-    <div className="bg-dark-850 rounded-lg overflow-hidden card-hover group border border-dark-700">
-      <div className="relative aspect-video">
-        {thumbnailError ? (
-          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-            <div className="text-center">
-              <Image className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm mb-2">Thumbnail failed to load</p>
-              <button
-                onClick={generateThumbnail}
-                disabled={generatingThumbnail}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs flex items-center mx-auto"
-              >
-                {generatingThumbnail ? (
-                  <RefreshCw className="w-3 h-3 animate-spin mr-1" />
-                ) : (
-                  <Image className="w-3 h-3 mr-1" />
-                )}
-                Generate Thumbnail
-              </button>
-            </div>
+    <div 
+      className="bg-phyght-gray rounded-xl overflow-hidden shadow-lg hover:shadow-phyght-red transition-all duration-300 transform hover:scale-105 border border-phyght-gray-light cursor-pointer group"
+      onClick={handleWatch}
+    >
+      {/* Thumbnail */}
+      <div className="relative aspect-video bg-phyght-black overflow-hidden">
+        <img
+          src={video.previewThumbnail || video.thumbnail}
+          alt={video.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          onError={(e) => {
+            console.log('🖼️ Thumbnail failed to load for:', video.title);
+            e.target.style.display = 'none';
+            setThumbnailError(true);
+          }}
+        />
+        
+        {/* Placeholder with Generate Button */}
+        {thumbnailError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-phyght-gray to-phyght-black">
+            <div className="text-phyght-red text-6xl mb-4 animate-pulse">🎬</div>
+            <p className="text-phyght-white text-sm mb-3 text-center px-4">No thumbnail available</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                generateThumbnail();
+              }}
+              className="bg-phyght-red hover:bg-phyght-red-dark text-phyght-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-phyght-red"
+            >
+              Generate Thumbnail
+            </button>
           </div>
-        ) : (
-          <img
-            src={content.previewThumbnail}
-            alt={content.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={handleThumbnailError}
-          />
         )}
         
-        <div className="absolute inset-0 video-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <button
-            onClick={handleWatch}
-            className="bg-primary-500 hover:bg-primary-600 text-white p-3 rounded-full transition-all duration-200 transform hover:scale-110 shadow-glow"
-          >
-            <Play className="w-6 h-6" />
-          </button>
+        {/* Play Button Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="bg-phyght-red bg-opacity-95 rounded-full p-5 transform scale-75 group-hover:scale-100 transition-transform duration-300 shadow-phyght-red">
+            <Play className="w-10 h-10 text-phyght-white" />
+          </div>
         </div>
-
-
-        {/* Combat category badge */}
-        <div className="absolute top-2 right-2">
-          <div className="bg-primary-500 bg-opacity-90 px-2 py-1 rounded-sm">
-            <span className="text-xs font-medium text-white uppercase">
-              {content.category?.replace('-', ' ') || 'Combat'}
+        
+        {/* Duration Badge */}
+        <div className="absolute bottom-3 right-3 bg-phyght-black bg-opacity-90 text-phyght-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm">
+          {video.duration || '0:00'}
+        </div>
+        
+        {/* Category Badge - Top Left */}
+        {video.category && (
+          <div className="absolute top-3 left-3">
+            <span className="inline-block bg-phyght-red text-phyght-white text-xs px-3 py-1 rounded-full font-medium shadow-lg">
+              {video.category?.replace('-', ' ') || 'Combat'}
             </span>
           </div>
-        </div>
-
-        {/* Duration */}
-        <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 px-2 py-1 rounded flex items-center space-x-1">
-          <Clock className="w-3 h-3 text-white" />
-          <span className="text-xs text-white">{content.duration}</span>
-        </div>
+        )}
       </div>
 
-      <div className="p-4">
-        <h3 className="text-white font-medium mb-2 line-clamp-2">
-          {content.title}
+      {/* Content */}
+      <div className="p-5">
+        <h3 className="font-bold text-phyght-white mb-2 line-clamp-2 text-lg group-hover:text-phyght-red transition-colors duration-300">
+          {video.title}
         </h3>
-        
-        <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-          {content.description}
+        <p className="text-gray-300 text-sm mb-4 line-clamp-2 leading-relaxed">
+          {video.description}
         </p>
-
-        {/* Combat-specific metadata */}
-        {content.fighters && (
-          <div className="mb-2">
-            <p className="text-sm text-primary-400 font-medium">
-              {content.fighters.join(' vs ')}
-            </p>
-            {content.organization && (
-              <p className="text-xs text-gray-500">
-                {content.organization} • {content.weightClass}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Eye className="w-3 h-3" />
-            <span>{content.views?.toLocaleString()} views</span>
+        
+        {/* Meta Info */}
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center space-x-3 text-gray-400">
+            <div className="flex items-center space-x-1">
+              <Eye className="w-4 h-4 text-phyght-red" />
+              <span>{video.views?.toLocaleString() || 0} views</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Star className="w-4 h-4 text-phyght-red" />
+              <span>{video.rating || 4.5}</span>
+            </div>
           </div>
           
-          <div className="flex items-center space-x-1">
-            <span>⭐</span>
-            <span>{content.rating}</span>
-          </div>
+          {/* Watch Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleWatch();
+            }}
+            className="bg-phyght-red hover:bg-phyght-red-dark text-phyght-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 shadow-phyght-red"
+          >
+            Watch Now
+          </button>
         </div>
-
-        {/* Action button */}
-        <button
-          onClick={handleWatch}
-          className="w-full mt-3 py-2 px-4 rounded-sm text-sm font-medium transition-all duration-200 ph-button"
-        >
-          Watch Fight
-        </button>
       </div>
     </div>
   );

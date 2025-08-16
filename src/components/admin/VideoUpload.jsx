@@ -255,263 +255,177 @@ const VideoUpload = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Upload Video</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-phyght-black via-phyght-gray to-phyght-black text-phyght-white py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-black mb-6 font-phyght tracking-wider">
+            <span className="text-phyght-white drop-shadow-2xl">PHYGHT</span>
+            <br />
+            <span className="text-phyght-red drop-shadow-2xl">TV</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Upload Your Fight Videos Instantly with Professional Quality
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* File Upload Area */}
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-gray-300">Video File *</label>
-            
-            {!selectedFile ? (
+        {/* Upload Form */}
+        <div className="bg-gradient-to-r from-phyght-gray to-phyght-gray-light rounded-2xl p-8 border border-phyght-gray-light shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* File Upload */}
+            <div>
+              <label className="block text-phyght-white font-bold mb-4 text-lg">
+                🎬 Video File *
+              </label>
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                className={`border-3 border-dashed rounded-2xl p-12 text-center transition-all duration-500 cursor-pointer group ${
                   dragActive 
-                    ? 'border-red-500 bg-red-500 bg-opacity-10' 
-                    : 'border-gray-600 hover:border-gray-500'
+                    ? 'border-phyght-red bg-gradient-to-r from-phyght-red bg-opacity-10 to-transparent scale-105' 
+                    : 'border-phyght-gray-light hover:border-phyght-red hover:scale-105'
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
               >
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-300 mb-2">
-                  Drag and drop your video file here, or{' '}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-red-500 hover:text-red-400 underline"
-                  >
-                    browse
-                  </button>
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Supports MP4, AVI, MOV, WMV, WebM (max 50MB)
-                </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="video/*"
-                  onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
+                  onChange={handleFileSelect}
                   className="hidden"
                 />
-              </div>
-            ) : (
-              <div className="bg-dark-700 rounded-lg p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <File className="w-8 h-8 text-blue-500" />
+                <div className="space-y-6">
+                  <div className="text-8xl group-hover:scale-110 transition-transform duration-300">🎬</div>
                   <div>
-                    <p className="text-white font-medium">{selectedFile.name}</p>
-                    <p className="text-gray-400 text-sm">{formatFileSize(selectedFile.size)}</p>
+                    <p className="text-phyght-white font-bold text-xl mb-2">
+                      {selectedFile ? selectedFile.name : 'Drop your video here or click to browse'}
+                    </p>
+                    <p className="text-gray-400 text-lg">
+                      Supports MP4, AVI, MOV, WMV, WebM (Max 50MB)
+                    </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedFile(null)}
-                  className="text-gray-400 hover:text-red-400 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
-            )}
-            
-            {errors.file && (
-              <p className="text-red-400 text-sm flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.file}
-              </p>
-            )}
-          </div>
-
-          {/* Upload Progress */}
-          {uploadProgress > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-300">Upload Progress</span>
-                <span className="text-sm text-gray-400">{uploadProgress}%</span>
-              </div>
-              
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-red-500 h-2 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
-              </div>
-              
-              {uploadStatus && (
-                <p className="text-sm text-gray-400 text-center">{uploadStatus}</p>
-              )}
             </div>
-          )}
 
-          {/* Optional Video Details (Collapsible) */}
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-            >
-              <span className="text-sm font-medium">
-                {showDetails ? 'Hide' : 'Add'} Video Details (Optional)
-              </span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {showDetails && (
-              <div className="space-y-4 pl-4 border-l border-gray-600">
+            {/* Upload Progress */}
+            {uploadProgress > 0 && (
+              <div className="space-y-4 bg-phyght-black rounded-2xl p-6 border border-phyght-gray-light">
+                <div className="flex justify-between text-lg font-semibold">
+                  <span className="text-phyght-white">Upload Progress</span>
+                  <span className="text-phyght-red">{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-phyght-gray-light rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-phyght-red to-phyght-red-dark h-3 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-lg text-gray-300 text-center">
+                  {uploadStatus === 'uploading' && '🚀 Uploading video...'}
+                  {uploadStatus === 'processing' && '⚙️ Processing video...'}
+                  {uploadStatus === 'complete' && '✅ Upload complete!'}
+                </p>
+              </div>
+            )}
+
+            {/* Optional Details Section */}
+            <details className="group">
+              <summary className="cursor-pointer text-phyght-white font-bold text-xl hover:text-phyght-red transition-colors duration-300 flex items-center space-x-3">
+                <span className="text-2xl">📝</span>
+                <span>Add Video Details (Optional)</span>
+                <span className="text-phyght-red group-open:rotate-180 transition-transform duration-300">▼</span>
+              </summary>
+              <div className="mt-6 space-y-6 pl-8 border-l-4 border-phyght-red">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                  <label className="block text-phyght-white font-semibold mb-3 text-lg">
+                    Title
+                  </label>
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Enter video title (optional)"
-                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Enter an engaging video title"
+                    className="w-full px-4 py-3 bg-phyght-black border-2 border-phyght-gray-light rounded-xl text-phyght-white placeholder-gray-500 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                  <label className="block text-phyght-white font-semibold mb-3 text-lg">
+                    Description
+                  </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Enter video description (optional)"
-                    rows={3}
-                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe your video content"
+                    rows={4}
+                    className="w-full px-4 py-3 bg-phyght-black border-2 border-phyght-gray-light rounded-xl text-phyght-white placeholder-gray-500 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300 resize-none"
                   />
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                  <label className="block text-phyght-white font-semibold mb-3 text-lg">
+                    Category
+                  </label>
                   <select
                     value={formData.category}
-                    onChange={(e) => handleInputChange('category', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500"
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-3 bg-phyght-black border-2 border-phyght-gray-light rounded-xl text-phyght-white focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
                   >
-                    {categories.map(category => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
+                    <option value="">Select a category</option>
+                    <option value="mma">🥊 MMA</option>
+                    <option value="boxing">🥊 Boxing</option>
+                    <option value="wrestling">🤼 Wrestling</option>
+                    <option value="jiu-jitsu">🥋 Jiu-Jitsu</option>
+                    <option value="kickboxing">🥊 Kickboxing</option>
+                    <option value="karate">🥋 Karate</option>
+                    <option value="taekwondo">🥋 Taekwondo</option>
+                    <option value="muay-thai">🥊 Muay Thai</option>
+                    <option value="combat-sports">⚔️ Combat Sports</option>
+                    <option value="tutorials">📚 Tutorials</option>
+                    <option value="highlights">🔥 Highlights</option>
                   </select>
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {formData.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-600 text-white"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(index)}
-                          className="ml-1 hover:text-red-200"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                      placeholder="Add tag and press Enter"
-                      className="flex-1 px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={addTag}
-                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Add
-                    </button>
-                  </div>
+                  <label className="block text-phyght-white font-semibold mb-3 text-lg">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tags.join(', ')}
+                    onChange={(e) => {
+                      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                      setFormData({ ...formData, tags });
+                    }}
+                    placeholder="Enter tags separated by commas (e.g., knockout, technique, champion)"
+                    className="w-full px-4 py-3 bg-phyght-black border-2 border-phyght-gray-light rounded-xl text-phyght-white placeholder-gray-500 focus:outline-none focus:border-phyght-red focus:ring-2 focus:ring-phyght-red focus:ring-opacity-50 transition-all duration-300"
+                  />
                 </div>
               </div>
-            )}
-          </div>
+            </details>
 
-          {/* Premium Toggle */}
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              id="isPremium"
-              checked={formData.isPremium}
-              onChange={(e) => handleInputChange('isPremium', e.target.checked)}
-              className="rounded border-gray-600 bg-dark-600 text-red-600 focus:ring-red-500"
-            />
-            <label htmlFor="isPremium" className="text-gray-300">
-              Premium Content (requires subscription to view)
-            </label>
-          </div>
-
-          {/* Submit Error */}
-          {errors.submit && (
-            <div className="bg-red-900 bg-opacity-20 border border-red-600 rounded-lg p-4">
-              <p className="text-red-400 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-2" />
-                {errors.submit}
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
             {/* Submit Button */}
-            <div className="flex space-x-4 pt-6">
-              <button
-                type="submit"
-                disabled={uploading || uploadProgress > 0}
-                className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
-                  uploading || uploadProgress > 0
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
-              >
-                {uploading || uploadProgress > 0 ? (
-                  <span className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Processing...'}
-                  </span>
-                ) : (
-                  'Upload Video Instantly'
-                )}
-              </button>
-              
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={uploading || uploadProgress > 0}
-                className={`py-3 px-6 rounded-lg font-medium transition-colors ${
-                  uploading || uploadProgress > 0
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                }`}
-              >
-                Cancel
-              </button>
-            </div>
-        </form>
+            <button
+              type="submit"
+              disabled={!selectedFile || uploadProgress > 0}
+              className={`w-full py-4 px-8 rounded-2xl font-bold text-xl transition-all duration-500 transform hover:scale-105 ${
+                !selectedFile || uploadProgress > 0
+                  ? 'bg-phyght-gray-light text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-phyght-red to-phyght-red-dark hover:from-phyght-red-dark hover:to-phyght-red text-phyght-white shadow-phyght-red hover:shadow-phyght-red-lg hover:-translate-y-1'
+              }`}
+            >
+              {uploadProgress === 0 && '🚀 Upload Video Instantly'}
+              {uploadProgress > 0 && uploadProgress < 100 && `Uploading... ${uploadProgress}%`}
+              {uploadProgress === 100 && '⚙️ Processing...'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
